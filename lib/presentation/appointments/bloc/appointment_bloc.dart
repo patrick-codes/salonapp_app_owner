@@ -112,7 +112,7 @@ class AppointmentBloc extends Bloc<AppointmentEvent, AppointmentState> {
 
     await flutterLocalNotificationsPlugin.show(
       appointment.hashCode,
-      'New ${appointment.servicesType} Appointment!',
+      'New Appointment Alert!!',
       'Received from ${appointment.phone ?? 'a client'}',
       notificationDetails,
     );
