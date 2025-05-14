@@ -141,7 +141,7 @@ class SalonServiceHelper {
 
   static bool isShopNearby(
       ShopModel shop, double? userLatitude, double? userLongitude) {
-    if (shop.cordinates!.length < 2) {
+    if (shop.cordinates.length < 2) {
       debugPrint("Error: Shop coordinates are missing or incomplete.");
       return false;
     }
@@ -149,13 +149,13 @@ class SalonServiceHelper {
     try {
       final Geodesy geodesy = Geodesy();
 
-      double? shopLatitude = shop.cordinates![0] is double
-          ? shop.cordinates![0]
-          : double.parse(shop.cordinates![0].toString());
+      double? shopLatitude = shop.cordinates[0] is double
+          ? shop.cordinates[0]
+          : double.parse(shop.cordinates[0].toString());
 
-      double? shopLongitude = shop.cordinates![1] is double
-          ? shop.cordinates![1]
-          : double.parse(shop.cordinates![1].toString());
+      double? shopLongitude = shop.cordinates[1] is double
+          ? shop.cordinates[1]
+          : double.parse(shop.cordinates[1].toString());
 
       LatLng userLatLng = LatLng(userLatitude!, userLongitude!);
       LatLng shopLatLng = LatLng(shopLatitude!, shopLongitude!);

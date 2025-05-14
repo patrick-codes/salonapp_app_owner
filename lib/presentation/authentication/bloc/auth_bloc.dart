@@ -43,7 +43,7 @@ class AuthBloc extends Bloc<AuthEvents, AuthState> {
     emit(AuthLoadingState());
 
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final String? token = prefs.getString('authToken');
+    final String? token = prefs.getString('managerauthToken');
     debugPrint('Token retrieved on app start: $token');
 
     if (token != null && token.isNotEmpty) {
@@ -172,10 +172,10 @@ class AuthBloc extends Bloc<AuthEvents, AuthState> {
       );
 
       final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('authToken', _auth.currentUser!.uid);
+      await prefs.setString('managerauthToken', _auth.currentUser!.uid);
 
-      debugPrint('AuthToken saved locally.');
-      debugPrint('AuthToken saved: ${_auth.currentUser!.uid}');
+      debugPrint('managerauthToken saved locally.');
+      debugPrint('managerauthToken saved: ${_auth.currentUser!.uid}');
     } on FirebaseAuthException catch (error) {
       final exception =
           SignUpWithEmailAndPasswordFailure(error.message.toString());
@@ -220,9 +220,9 @@ class AuthBloc extends Bloc<AuthEvents, AuthState> {
 
       emit(AuthLogoutSuccesState(message: 'User Logged out Succesfuly!!'));
       final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.remove('authToken');
+      await prefs.remove('managerauthToken');
       debugPrint('User Logged out Succesfuly!!');
-      debugPrint('AuthToken removed !!');
+      debugPrint('managerauthToken removed !!');
     } on FirebaseAuthException catch (e) {
       emit(AuthLogoutFailureState(error: e.message.toString()));
       debugPrint('Logout Failed:${e.message}');

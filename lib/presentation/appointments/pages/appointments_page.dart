@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:googleapis/authorizedbuyersmarketplace/v1.dart';
 import 'package:icons_plus/icons_plus.dart';
-import 'package:m_toast/m_toast.dart';
 
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:salonapp_app_owner/helpers/config/size_config.dart';
@@ -12,7 +10,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/constants/color_constants.dart';
 import '../../../helpers/text style/text_style.dart';
-import '../../../helpers/widgets/show_up_animation.dart';
 import '../bloc/appointment_bloc.dart';
 import '../repository/data model/appointment_model.dart';
 
@@ -44,227 +41,19 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AppointmentBloc, AppointmentState>(
-      listener: (context, state) {
-        if (state is AppointmentsFetchFailureState) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.errorMessage)),
-          );
-        }
-      },
-      builder: (context, state) {
-        if (state is AppointmentsLoadingState) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (state is AppointmentsFetchedState) {
-          final appointments = state.appointment ?? [];
-
-          return WillPopScope(
-            onWillPop: () async {
-              context.read<AppointmentBloc>().add(ViewAppointmentEvent());
-              return true;
-            },
-            child: Scaffold(
-              backgroundColor: barBg,
-              extendBodyBehindAppBar: true,
-              appBar: AppBar(
-                systemOverlayStyle: const SystemUiOverlayStyle(
-                  statusBarColor: iconGrey,
-                  statusBarIconBrightness: Brightness.light,
-                ),
-                backgroundColor: Colors.white,
-                leading: const Icon(
-                  MingCute.arrow_left_fill,
-                ),
-                centerTitle: true,
-                title: Text(
-                  "Appointments (${state.appointment!.length})",
-                  style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                actions: [
-                  GestureDetector(
-                    onTap: () {},
-                    child: Icon(
-                      MingCute.more_2_fill,
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                ],
-              ),
-              body: ListView.builder(
-                itemCount: appointments.length,
-                itemBuilder: (context, index) {
-                  final appt = appointments[index];
-                  return Container(
-                    height: 170,
-                    width: SizeConfig.screenWidth,
-                    margin: const EdgeInsets.all(8),
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: whiteColor,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  MingCute.scissors_2_line,
-                                  size: 15,
-                                  color: iconGrey,
-                                ),
-                                SizedBox(width: 5),
-                                PrimaryText(
-                                  text: appt!.servicesType ?? '',
-                                  size: 15,
-                                  color: blackColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 5),
-                            Row(
-                              children: [
-                                Icon(
-                                  MingCute.phone_line,
-                                  size: 15,
-                                  color: iconGrey,
-                                ),
-                                SizedBox(width: 5),
-                                PrimaryText(
-                                  text: appt.phone ?? '',
-                                  size: 13,
-                                  color: iconGrey,
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 5),
-                            Row(
-                              children: [
-                                Icon(
-                                  MingCute.calendar_line,
-                                  size: 15,
-                                  color: iconGrey,
-                                ),
-                                SizedBox(width: 5),
-                                PrimaryText(
-                                  text: appt.appointmentDate
-                                          ?.toLocal()
-                                          .toString()
-                                          .split(' ')[0] ??
-                                      '',
-                                  size: 13,
-                                  color: blackColor,
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 5),
-                            Row(
-                              children: [
-                                Icon(
-                                  MingCute.clock_2_line,
-                                  size: 15,
-                                  color: iconGrey,
-                                ),
-                                SizedBox(width: 5),
-                                PrimaryText(
-                                  text: appt.appointmentDate
-                                          ?.toLocal()
-                                          .toString()
-                                          .split(' ')[1] ??
-                                      '',
-                                  size: 13,
-                                  color: blackColor,
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 20),
-                            Container(
-                              height: 30,
-                              width: 140,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: primaryColor,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  PrimaryText(
-                                    text: 'End service',
-                                    size: 12,
-                                    color: primaryColor,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              PrimaryText(
-                                text: 'PAID',
-                                size: 13,
-                                color: Colors.lightGreen,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              PrimaryText(
-                                text: appt.amount.toString(),
-                                size: 13.5,
-                                color: blackColor,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-          );
-        }
-
+        listener: (context, state) {
+      if (state is AppointmentsFetchFailureState) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(state.errorMessage)),
+        );
+      }
+    }, builder: (context, state) {
+      if (state is AppointmentsLoadingState) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      if (state is AppointmentsFetchFailureState) {
         return Scaffold(
           backgroundColor: secondaryBg,
-          appBar: AppBar(
-            systemOverlayStyle: const SystemUiOverlayStyle(
-              statusBarColor: primaryColor,
-              statusBarIconBrightness: Brightness.light,
-            ),
-            backgroundColor: Colors.white,
-            leading: const Icon(
-              MingCute.arrow_left_fill,
-            ),
-            centerTitle: true,
-            title: Text(
-              "Appointments",
-              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            actions: [
-              GestureDetector(
-                onTap: () {},
-                child: Icon(
-                  MingCute.more_2_fill,
-                ),
-              ),
-              SizedBox(width: 8),
-            ],
-          ),
           body: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -277,7 +66,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 ),
                 SizedBox(height: 20),
                 PrimaryText(
-                  text: 'No Appointments Found',
+                  text: state.errorMessage,
                   color: iconGrey,
                   size: 15,
                 ),
@@ -285,8 +74,235 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             ),
           ),
         );
-      },
-    );
+      }
+      if (state is AppointmentsFetchedState) {
+        final appointments = state.appointment ?? [];
+        return WillPopScope(
+          onWillPop: () async {
+            context.read<AppointmentBloc>().add(ViewAppointmentEvent());
+            return true;
+          },
+          child: Scaffold(
+            backgroundColor: barBg,
+            extendBodyBehindAppBar: true,
+            appBar: AppBar(
+              systemOverlayStyle: const SystemUiOverlayStyle(
+                statusBarColor: iconGrey,
+                statusBarIconBrightness: Brightness.light,
+              ),
+              backgroundColor: Colors.white,
+              leading: const Icon(
+                MingCute.arrow_left_fill,
+              ),
+              centerTitle: true,
+              title: Text(
+                "Appointments (${state.appointment!.length})",
+                style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              actions: [
+                GestureDetector(
+                  onTap: () {},
+                  child: Icon(
+                    MingCute.more_2_fill,
+                  ),
+                ),
+                SizedBox(width: 8),
+              ],
+            ),
+            body: ListView.builder(
+              itemCount: appointments.length,
+              itemBuilder: (context, index) {
+                final appt = appointments[index];
+                return Container(
+                  height: 170,
+                  width: SizeConfig.screenWidth,
+                  margin: const EdgeInsets.all(8),
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: whiteColor,
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                MingCute.scissors_2_line,
+                                size: 15,
+                                color: iconGrey,
+                              ),
+                              SizedBox(width: 5),
+                              PrimaryText(
+                                text: appt!.servicesType ?? '',
+                                size: 15,
+                                color: blackColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 5),
+                          Row(
+                            children: [
+                              Icon(
+                                MingCute.phone_line,
+                                size: 15,
+                                color: iconGrey,
+                              ),
+                              SizedBox(width: 5),
+                              PrimaryText(
+                                text: appt.phone ?? '',
+                                size: 13,
+                                color: iconGrey,
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 5),
+                          Row(
+                            children: [
+                              Icon(
+                                MingCute.calendar_line,
+                                size: 15,
+                                color: iconGrey,
+                              ),
+                              SizedBox(width: 5),
+                              PrimaryText(
+                                text: appt.appointmentDate
+                                        ?.toLocal()
+                                        .toString()
+                                        .split(' ')[0] ??
+                                    '',
+                                size: 13,
+                                color: blackColor,
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 5),
+                          Row(
+                            children: [
+                              Icon(
+                                MingCute.clock_2_line,
+                                size: 15,
+                                color: iconGrey,
+                              ),
+                              SizedBox(width: 5),
+                              PrimaryText(
+                                text: appt.appointmentDate
+                                        ?.toLocal()
+                                        .toString()
+                                        .split(' ')[1] ??
+                                    '',
+                                size: 13,
+                                color: blackColor,
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 20),
+                          Container(
+                            height: 30,
+                            width: 140,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: primaryColor,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                PrimaryText(
+                                  text: 'End service',
+                                  size: 12,
+                                  color: primaryColor,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            PrimaryText(
+                              text: 'PAID',
+                              size: 13,
+                              color: Colors.lightGreen,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            PrimaryText(
+                              text: appt.amount.toString(),
+                              size: 13.5,
+                              color: blackColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      }
+      return Scaffold(
+        backgroundColor: secondaryBg,
+        appBar: AppBar(
+          systemOverlayStyle: const SystemUiOverlayStyle(
+            statusBarColor: primaryColor,
+            statusBarIconBrightness: Brightness.light,
+          ),
+          backgroundColor: Colors.white,
+          leading: const Icon(
+            MingCute.arrow_left_fill,
+          ),
+          centerTitle: true,
+          title: Text(
+            "Appointments",
+            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          actions: [
+            GestureDetector(
+              onTap: () {},
+              child: Icon(
+                MingCute.more_2_fill,
+              ),
+            ),
+            SizedBox(width: 8),
+          ],
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SvgPicture.asset(
+                'assets/svgs/undraw_file-search_cbur.svg',
+                height: 150,
+                width: 150,
+              ),
+              SizedBox(height: 20),
+              PrimaryText(
+                text: 'No Appointments Found',
+                color: iconGrey,
+                size: 15,
+              ),
+            ],
+          ),
+        ),
+      );
+    });
   }
 
   Widget buildContactsList(BuildContext context, List<Contact> contacts) {
