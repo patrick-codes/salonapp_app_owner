@@ -21,7 +21,7 @@ class _MainHomePageState extends State<MainHomePage> {
 
   List<Widget> pages = [
     HomePage(),
-    CreateShopPage(),
+    Container(),
     Container(),
     Container(),
     ProfilePage(),

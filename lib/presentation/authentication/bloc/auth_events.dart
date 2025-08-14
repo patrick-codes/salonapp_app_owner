@@ -42,7 +42,9 @@ class LogoutEvent extends AuthEvents {}
 
 class ForgotPasswordEvent extends AuthEvents {}
 
-class PickImageEvent extends AuthEvents {}
+// class PickImageEvent extends AuthEvents {}
+
+// class PickWorkImagesEvent extends AuthEvents {}
 
 class ToggleCheckboxEvent extends AuthEvents {
   final bool? isBool;

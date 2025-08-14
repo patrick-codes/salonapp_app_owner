@@ -14,4 +14,7 @@ class CreateShopController {
   static final workImgs = TextEditingController();
   static final profileImg = TextEditingController();
   static final dateJoined = TextEditingController();
+
+  static final latitude = TextEditingController();
+  static final longitude = TextEditingController();
 }

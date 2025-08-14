@@ -37,6 +37,12 @@ class ImagePickSuccesState extends AuthState {
   ImagePickSuccesState({required this.imgUrl});
 }
 
+class MultipleImagePickSuccesState extends AuthState {
+  final List<String>? imgUrls;
+
+  MultipleImagePickSuccesState({required this.imgUrls});
+}
+
 class ImageUrlSuccesState extends AuthState {
   final String? imgUrl;
 
@@ -63,4 +69,15 @@ class CheckboxState extends AuthState {
   final bool? isChecked;
 
   CheckboxState({required this.isChecked});
+}
+
+// States
+class ImageUploadedSuccessState extends AuthState {
+  final String url; // public URL for profile image
+  ImageUploadedSuccessState({required this.url});
+}
+
+class WorkImagesUploadedSuccessState extends AuthState {
+  final List<String> urls; // public URLs for work images
+  WorkImagesUploadedSuccessState({required this.urls});
 }

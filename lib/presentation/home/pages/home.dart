@@ -98,11 +98,13 @@ class _HomePageState extends State<HomePage> {
           floatingActionButton: FloatingActionButton(
             shape: OvalBorder(),
             child: Icon(
-              MingCute.add_circle_fill,
+              MingCute.add_fill,
               color: whiteColor,
-              size: 40,
+              size: 30,
             ),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.pushNamed(context, '/createshop');
+            },
             backgroundColor: blackColor,
           ),
           body: SafeArea(

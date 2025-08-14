@@ -26,7 +26,8 @@ class AuthBloc extends Bloc<AuthEvents, AuthState> {
   AuthBloc() : super(AuthInitial()) {
     on<AppStartedEvent>(onAppStarted);
     on<ToggleCheckboxEvent>(checkBox);
-    on<PickImageEvent>(pickImage);
+    // on<PickImageEvent>(pickImage);
+    // on<PickWorkImagesEvent>(pickWorkImages);
     on<SignupEvent>(registerUser);
     on<LoginEvent>(loginUser);
     on<ForgotPasswordEvent>(resetPassword);
@@ -59,78 +60,116 @@ class AuthBloc extends Bloc<AuthEvents, AuthState> {
     }
   }
 
-  Future<void> pickImage(PickImageEvent event, Emitter<AuthState> emit) async {
-    emit(ImageLoadingState());
-    debugPrint("Image Loading......");
+  // Future<void> pickImage(PickImageEvent event, Emitter<AuthState> emit) async {
+  //   emit(ImageLoadingState());
+  //   debugPrint("Image Loading......");
 
-    try {
-      final pickedFile =
-          await ImagePicker().pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
-        _image = File(pickedFile.path);
-        emit(ImagePickSuccesState(imgUrl: _image));
-      } else {
-        emit(ImagePickFailureState(error: 'No image was selected'));
-      }
-    } catch (e) {
-      ImagePickFailureState(error: e.toString());
-      debugPrint("Error: $e");
-    }
-  }
+  //   try {
+  //     final pickedFile =
+  //         await ImagePicker().pickImage(source: ImageSource.gallery);
+  //     if (pickedFile != null) {
+  //       _image = File(pickedFile.path);
+  //       emit(ImagePickSuccesState(imgUrl: _image));
+  //     } else {
+  //       emit(ImagePickFailureState(error: 'No image was selected'));
+  //     }
+  //   } catch (e) {
+  //     ImagePickFailureState(error: e.toString());
+  //     debugPrint("Error: $e");
+  //   }
+  // }
 
-  Future<AuthClient> getAuthClient() async {
-    final serviceAccount = await rootBundle.loadString(
-        'assets/animations/formidable-bank-325022-43d02766ad7a.json');
-    final credentials =
-        ServiceAccountCredentials.fromJson(json.decode(serviceAccount));
+  // Future<void> pickWorkImages(
+  //     PickWorkImagesEvent event, Emitter<AuthState> emit) async {
+  //   emit(
+  //       ImageLoadingState()); // you can reuse your loading state or create WorkImagesLoadingState
+  //   debugPrint("Picking multiple images...");
 
-    final client = await clientViaServiceAccount(
-      credentials,
-      [drive.DriveApi.driveFileScope],
-    );
+  //   try {
+  //     final pickedFiles = await ImagePicker().pickMultiImage();
+  //     if (pickedFiles.isEmpty) {
+  //       emit(ImagePickFailureState(error: 'No images selected'));
+  //       return;
+  //     }
 
-    return client;
-  }
+  //     final urls = <String>[];
+  //     for (final x in pickedFiles) {
+  //       final fileId = await uploadImageToGoogleDrive(File(x.path));
+  //       if (fileId != null) {
+  //         await makeFilePublic(fileId);
+  //         urls.add(getPublicImageUrl(fileId));
+  //       }
+  //     }
 
-  Future<String?> uploadImageToGoogleDrive(File? imageFile) async {
-    final client = await getAuthClient();
-    final driveApi = drive.DriveApi(client);
+  //     if (urls.isEmpty) {
+  //       emit(ImagePickFailureState(error: 'Upload failed'));
+  //       return;
+  //     }
 
-    var fileMetadata = drive.File();
-    fileMetadata.name = imageFile!.path.split('/').last;
-    fileMetadata.parents = ["1s7GvjUetBcrdoo0qHffuRRAQDshjiU3n"];
+  //     // keep your old success state if you have it…
+  //     emit(MultipleImagePickSuccesState(imgUrls: urls));
 
-    var media = drive.Media(imageFile.openRead(), imageFile.lengthSync());
+  //     // …and also emit this new, explicit “uploaded” state with public URLs:
+  //     emit(WorkImagesUploadedSuccessState(urls: urls));
+  //   } catch (e) {
+  //     emit(ImagePickFailureState(error: e.toString()));
+  //     debugPrint("Error: $e");
+  //   }
+  // }
 
-    var response =
-        await driveApi.files.create(fileMetadata, uploadMedia: media);
-    client.close();
+  // Future<AuthClient> getAuthClient() async {
+  //   final serviceAccount = await rootBundle.loadString(
+  //       'assets/animations/formidable-bank-325022-43d02766ad7a.json');
+  //   final credentials =
+  //       ServiceAccountCredentials.fromJson(json.decode(serviceAccount));
 
-    if (response.id != null) {
-      print("Uploaded File ID: ${response.id}");
-      return response.id;
-    } else {
-      print("Upload failed");
-      return null;
-    }
-  }
+  //   final client = await clientViaServiceAccount(
+  //     credentials,
+  //     [drive.DriveApi.driveFileScope],
+  //   );
 
-  Future<void> makeFilePublic(String fileId) async {
-    final client = await getAuthClient();
-    final driveApi = drive.DriveApi(client);
+  //   return client;
+  // }
 
-    var permission = drive.Permission();
-    permission.type = "anyone";
-    permission.role = "reader";
+  // Future<String?> uploadImageToGoogleDrive(File? imageFile) async {
+  //   final client = await getAuthClient();
+  //   final driveApi = drive.DriveApi(client);
 
-    await driveApi.permissions.create(permission, fileId);
-    print("File is now public.");
-    client.close();
-  }
+  //   var fileMetadata = drive.File();
+  //   fileMetadata.name = imageFile!.path.split('/').last;
+  //   fileMetadata.parents = ["1s7GvjUetBcrdoo0qHffuRRAQDshjiU3n"];
 
-  String getPublicImageUrl(String fileId) {
-    return "https://drive.google.com/uc?id=$fileId";
-  }
+  //   var media = drive.Media(imageFile.openRead(), imageFile.lengthSync());
+
+  //   var response =
+  //       await driveApi.files.create(fileMetadata, uploadMedia: media);
+  //   client.close();
+
+  //   if (response.id != null) {
+  //     print("Uploaded File ID: ${response.id}");
+  //     return response.id;
+  //   } else {
+  //     print("Upload failed");
+  //     return null;
+  //   }
+  // }
+
+  // Future<void> makeFilePublic(String fileId) async {
+  //   final client = await getAuthClient();
+  //   final driveApi = drive.DriveApi(client);
+
+  //   var permission = drive.Permission();
+  //   permission.type = "anyone";
+  //   permission.role = "reader";
+
+  //   await driveApi.permissions.create(permission, fileId);
+  //   print("File is now public.");
+  //   client.close();
+  // }
+
+  // String getPublicImageUrl(String fileId) {
+  //   return "https://drive.google.com/uc?id=$fileId";
+  // }
 
   Future<void> registerUser(SignupEvent event, Emitter<AuthState> emit) async {
     try {
@@ -141,15 +180,15 @@ class AuthBloc extends Bloc<AuthEvents, AuthState> {
         password: event.password,
       );
 
-      if (_image != null) {
-        String? fileId = await uploadImageToGoogleDrive(_image!);
-        if (fileId != null) {
-          await makeFilePublic(fileId);
-          imageUrl = getPublicImageUrl(fileId);
-          emit(ImageUrlSuccesState(imgUrl: imageUrl));
-          debugPrint("Image URL: $imageUrl");
-        }
-      }
+      // if (_image != null) {
+      //   String? fileId = await uploadImageToGoogleDrive(_image!);
+      //   if (fileId != null) {
+      //     await makeFilePublic(fileId);
+      //     imageUrl = getPublicImageUrl(fileId);
+      //     emit(ImageUrlSuccesState(imgUrl: imageUrl));
+      //     debugPrint("Image URL: $imageUrl");
+      //   }
+      // }
       final user = UserModel(
         id: UserHelper.firebaseUser!.uid,
         fullname: event.fullName,

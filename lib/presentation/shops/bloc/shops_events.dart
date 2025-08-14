@@ -60,3 +60,9 @@ class SearchShopEvent extends ShopsEvent {
 
   SearchShopEvent({required this.query});
 }
+
+class PickMultipleImagesEvent extends ShopsEvent {}
+
+class PickImageEvent extends ShopsEvent {}
+
+class PickWorkImagesEvent extends ShopsEvent {}
