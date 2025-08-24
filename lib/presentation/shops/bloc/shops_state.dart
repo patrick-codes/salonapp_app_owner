@@ -70,37 +70,25 @@ class EmptyShopState extends ShopsState {
   EmptyShopState({required this.message});
 }
 
-class ImageLoadingState extends ShopsState {}
-
-class MultipleImagesPickedState extends ShopsState {
-  final List<String> imagePaths;
-  MultipleImagesPickedState(this.imagePaths);
+class ImagePickedState extends ShopsState {
+  final String imageUrl;
+  File? pickedFile;
+  ImagePickedState({required this.imageUrl, this.pickedFile});
 }
 
-class ImageUploadedSuccessState extends ShopsState {
-  final String url; // public URL for profile image
-  ImageUploadedSuccessState({required this.url});
+class WorkImagesPickedState extends ShopsState {
+  final List<String> imageUrls;
+  WorkImagesPickedState(this.imageUrls);
 }
 
-class WorkImagesUploadedSuccessState extends ShopsState {
-  final List<String> urls; // public URLs for work images
-  WorkImagesUploadedSuccessState({required this.urls});
+class LocalImagesPickedState extends ShopsState {
+  final List<File> pickedFiles; // the files for preview
+
+  LocalImagesPickedState(this.pickedFiles); // positional
 }
 
-class ImagePickSuccesState extends ShopsState {
-  final File? imgUrl;
+class ProfileImagesPickedState extends ShopsState {
+  final File? pickedFile; // the files for preview
 
-  ImagePickSuccesState({required this.imgUrl});
-}
-
-class ImagePickFailureState extends ShopsState {
-  final String error;
-
-  ImagePickFailureState({required this.error});
-}
-
-class MultipleImagePickSuccesState extends ShopsState {
-  final List<String>? imgUrls;
-
-  MultipleImagePickSuccesState({required this.imgUrls});
+  ProfileImagesPickedState(this.pickedFile); // positional
 }

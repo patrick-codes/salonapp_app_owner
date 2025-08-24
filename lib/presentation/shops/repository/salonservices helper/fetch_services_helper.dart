@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../../../../data/image uploader/image_uploader.dart';
 import '../data rmodel/h_shop_service_model.dart';
 import '../data rmodel/service_model.dart';
 import 'package:geodesy/geodesy.dart';
@@ -10,48 +14,77 @@ class SalonServiceHelper {
   List<ShopModel> shopList = [];
 
   final _db = FirebaseFirestore.instance;
+  final firebaseUser = FirebaseAuth.instance.currentUser!.uid;
+
+  Future<String?> uploadImage(String? imagePath) async {
+    if (imagePath == null || imagePath.isEmpty) {
+      return null; // nothing to upload
+    }
+
+    // Already a Cloudinary URL
+    if (imagePath.startsWith("http")) {
+      return imagePath;
+    }
+
+    // Local file → upload
+    File file = File(imagePath);
+    if (!file.existsSync()) {
+      print(" File does not exist at path: $imagePath");
+      return null;
+    }
+
+    final uploadedUrl = await CloudinaryHelper2.uploadImage(file);
+    return uploadedUrl;
+  }
 
   Future<void> createService(ShopModel shop) async {
     try {
-      await _db.collection("salonshops").add(shop.toJson());
-      print("salonshops created sucessfully");
-    } catch (error) {
-      print(error);
-    }
-  }
+      // Handle profile image safely
+      final profileImgUrl = await uploadImage(shop.profileImg);
 
-/*
-  Future<List<ShopModel>?> fetchAllSalonShops(
-      double userLatitude, double userLongitude) async {
-    try {
-      QuerySnapshot<Map<String, dynamic>> querySnapshot =
-          await _db.collection("salonshops").get();
-      final salonShops =
-          querySnapshot.docs.map((doc) => ShopModel.fromSnapshot(doc)).toList();
-      print("Fetched ${salonShops.length} salonShops successfully");
-
-      // Check if the station is nearby based on user's coordinates
-      if (isStationNearby(shop, userLongitude, userLatitude)) {
-        shopList.add(station);
+      // Handle work images safely
+      List<String> workImgUrls = [];
+      if (shop.workImgs != null) {
+        for (var img in shop.workImgs!) {
+          final uploadedUrl = await uploadImage(img);
+          if (uploadedUrl != null) {
+            workImgUrls.add(uploadedUrl);
+          }
+        }
       }
-      totalService = salonShops.length;
-      return salonShops;
-    } catch (error) {
-      print("Error fetching salonShops: $error");
-      return [];
+
+      // Save only valid URLs
+      final shopData = shop.toJson();
+      shopData["profileImg"] = profileImgUrl ?? '';
+      shopData["workImgs"] = workImgUrls;
+
+      await _db.collection("salonshops").add(shopData);
+
+      print(" Shop created successfully");
+    } catch (e) {
+      print("Failed to create shop: $e");
     }
   }
-*/
+
   Future<List<ShopModel>> fetchAllSalonShops(
       double? userLatitude, double? userLongitude) async {
     try {
       QuerySnapshot<Map<String, dynamic>> querySnapshot =
           await _db.collection("salonshops").get();
-      final List<ShopModel> salonShops =
-          querySnapshot.docs.map((doc) => ShopModel.fromSnapshot(doc)).toList();
 
-      print("Fetched ${salonShops.length} salonShops successfully");
+      final List<ShopModel> salonShops = [];
 
+      for (var doc in querySnapshot.docs) {
+        try {
+          salonShops.add(ShopModel.fromSnapshot(doc));
+        } catch (e) {
+          print("Skipping shop ${doc.id} due to parse error: $e");
+        }
+      }
+
+      print("Fetched ${salonShops.length} valid salonShops successfully");
+
+      // Filter nearby shops
       List<ShopModel> nearbyShops = [];
       for (var shop in salonShops) {
         if (isShopNearby(shop, userLatitude, userLongitude)) {
@@ -59,25 +92,8 @@ class SalonServiceHelper {
         }
       }
 
-      print("   Nearby shops: ${nearbyShops.length}");
-
+      print("Nearby shops: ${nearbyShops.length}");
       return nearbyShops;
-    } catch (error) {
-      print("Error fetching salonShops: $error");
-      return [];
-    }
-  }
-
-  Future<List<HomeShopModel>?> fetchHomeSalonShops() async {
-    try {
-      QuerySnapshot<Map<String, dynamic>> querySnapshot =
-          await _db.collection("salonshops").get();
-      final salonShops = querySnapshot.docs
-          .map((doc) => HomeShopModel.fromSnapshot(doc))
-          .toList();
-      print("Fetched ${salonShops.length} salonShops successfully");
-      totalService = salonShops.length;
-      return salonShops;
     } catch (error) {
       print("Error fetching salonShops: $error");
       return [];
@@ -175,28 +191,4 @@ class SalonServiceHelper {
       return false;
     }
   }
-
-/*
-  static bool isShopNearby(
-      ShopModel shop, double? userLatitude, double? userLongitude) {
-    final Geodesy geodesy = Geodesy();
-
-    LatLng userLatLng = LatLng(userLatitude!, userLongitude!);
-    LatLng stationLatLng =
-        LatLng(shop.cordinates[0] as double, shop.cordinates[1] as double);
-
-    num distanceNum =
-        geodesy.distanceBetweenTwoGeoPoints(userLatLng, stationLatLng);
-
-    // Convert distance from meters to kilometers
-    double distanceInKm = (distanceNum as double) / 1000.0;
-    shop.distanceToUser = distanceInKm;
-
-    const double maxDistance = 6.0; //6 Maximum distance in kilometers
-
-    print('Distance $distanceInKm km');
-
-    return distanceInKm <= maxDistance;
-  }
-*/
 }

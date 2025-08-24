@@ -1,11 +1,12 @@
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import '../../authentication/bloc/auth_bloc.dart';
 import '../bloc/shops_bloc.dart';
 import '../components/createservice_controllers.dart';
-import 'package:intl/intl.dart';
+import '../repository/data rmodel/service_model.dart';
 
 class CreateShopPage extends StatefulWidget {
   const CreateShopPage({super.key});
@@ -19,7 +20,6 @@ class _CreateShopPageState extends State<CreateShopPage> {
   final firebaseUser = FirebaseAuth.instance.currentUser!.uid;
   final _formKey = GlobalKey<FormState>();
 
-  // Dropdown options
   final List<String> categories = ["Unisex", "Men", "Women"];
   final List<String> openingDaysList = [
     "Mondays - Saturdays",
@@ -31,22 +31,19 @@ class _CreateShopPageState extends State<CreateShopPage> {
     "9:00am - 8:00pm",
     "10:00am - 7:00pm"
   ];
-  final List<String> servicesList = [
-    "Haircut",
-    "Locks",
-    "Washing",
-    "Shaving",
-    "Dyeing"
-  ];
 
-  // Selected values
   String? selectedCategory;
   String? selectedDays;
   String? selectedTimes;
-  List<String> selectedServices = [];
-  List<String> workImages = [];
+  List<Service> services = [];
   List<String> workImageUrls = [];
   String? profileImageUrl;
+
+  File? _profileImage;
+  List<File> _workImages = [];
+
+  final serviceNameController = TextEditingController();
+  final servicePriceController = TextEditingController();
 
   String _formatDateHuman(DateTime date) {
     final day = date.day;
@@ -59,250 +56,253 @@ class _CreateShopPageState extends State<CreateShopPage> {
                 : (day % 10 == 3)
                     ? 'rd'
                     : 'th';
-    final month = DateFormat('MMMM').format(date); // "January"
-    return '$day$suffix $month ${date.year}'; // e.g., "6th January 2025"
+    final month = DateFormat('MMMM').format(date);
+    return '$day$suffix $month ${date.year}';
+  }
+
+  void _addService() {
+    final name = serviceNameController.text.trim();
+    final price = double.tryParse(servicePriceController.text.trim());
+
+    if (name.isNotEmpty && price != null) {
+      setState(() {
+        services.add(Service(name: name, price: price)); // 👈 Use Service
+      });
+      serviceNameController.clear();
+      servicePriceController.clear();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<ShopsBloc, ShopsState>(
       listener: (context, state) {
+        if (state is ImagePickedState) {
+          setState(() {
+            _profileImage = state.pickedFile;
+            profileImageUrl = state.imageUrl;
+          });
+        } else if (state is WorkImagesPickedState) {
+          setState(() {
+            _workImages = state.imageUrls.map((path) => File(path)).toList();
+          });
+        }
+        if (state is LocalImagesPickedState) {
+          setState(() {
+            _workImages = state.pickedFiles;
+          });
+        }
+
         if (state is ShopCreatedSuccesState) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
-          );
-          Navigator.pop(context);
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(state.message)));
         } else if (state is ShopCreateFailureState) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.error)),
-          );
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(state.error)));
         } else if (state is AuthLogoutSuccesState) {
           Navigator.pushNamed(context, '/');
         }
       },
       builder: (context, state) {
         return Scaffold(
-          appBar: AppBar(
-            title: const Text("Create Shop"),
-            centerTitle: true,
-          ),
           body: SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Form(
                 key: _formKey,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Shop Name
-                    TextFormField(
+                    _buildTextField(
                       controller: CreateShopController.shopName,
-                      decoration: const InputDecoration(
-                        labelText: "Shop Name",
-                        filled: true,
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (val) =>
-                          val!.isEmpty ? "Please enter shop name" : null,
+                      label: "Shop Name",
+                      validator: (v) =>
+                          v!.isEmpty ? "Please enter shop name" : null,
                     ),
                     const SizedBox(height: 16),
 
                     // Category
-                    DropdownButtonFormField<String>(
+                    _buildDropdown(
+                      label: "Category",
                       value: selectedCategory,
-                      items: categories
-                          .map((cat) =>
-                              DropdownMenuItem(value: cat, child: Text(cat)))
-                          .toList(),
+                      items: categories,
                       onChanged: (val) =>
                           setState(() => selectedCategory = val),
-                      decoration: const InputDecoration(
-                        labelText: "Category",
-                        border: OutlineInputBorder(),
-                        filled: true,
-                      ),
-                      validator: (val) =>
-                          val == null ? "Please select category" : null,
                     ),
                     const SizedBox(height: 16),
 
                     // Opening Days
-                    DropdownButtonFormField<String>(
+                    _buildDropdown(
+                      label: "Opening Days",
                       value: selectedDays,
-                      items: openingDaysList
-                          .map((day) =>
-                              DropdownMenuItem(value: day, child: Text(day)))
-                          .toList(),
+                      items: openingDaysList,
                       onChanged: (val) => setState(() => selectedDays = val),
-                      decoration: const InputDecoration(
-                        labelText: "Opening Days",
-                        border: OutlineInputBorder(),
-                        filled: true,
-                      ),
-                      validator: (val) =>
-                          val == null ? "Please select opening days" : null,
                     ),
                     const SizedBox(height: 16),
 
                     // Opening Times
-                    DropdownButtonFormField<String>(
+                    _buildDropdown(
+                      label: "Opening Times",
                       value: selectedTimes,
-                      items: openingTimesList
-                          .map((time) =>
-                              DropdownMenuItem(value: time, child: Text(time)))
-                          .toList(),
+                      items: openingTimesList,
                       onChanged: (val) => setState(() => selectedTimes = val),
-                      decoration: const InputDecoration(
-                        labelText: "Opening Times",
-                        border: OutlineInputBorder(),
-                        filled: true,
-                      ),
-                      validator: (val) =>
-                          val == null ? "Please select opening times" : null,
                     ),
                     const SizedBox(height: 16),
 
                     // Location
-                    TextFormField(
+                    _buildTextField(
                       controller: CreateShopController.location,
-                      decoration: const InputDecoration(
-                        labelText: "Location",
-                        filled: true,
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (val) =>
-                          val!.isEmpty ? "Please enter location" : null,
+                      label: "Location",
+                      validator: (v) =>
+                          v!.isEmpty ? "Please enter location" : null,
                     ),
                     const SizedBox(height: 16),
 
                     // Phone
-                    TextFormField(
+                    _buildTextField(
                       controller: CreateShopController.phone,
+                      label: "Phone",
                       keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(
-                        labelText: "Phone",
-                        filled: true,
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (val) =>
-                          val!.isEmpty ? "Please enter phone number" : null,
+                      validator: (v) =>
+                          v!.isEmpty ? "Please enter phone number" : null,
                     ),
                     const SizedBox(height: 16),
 
                     // WhatsApp
-                    TextFormField(
+                    _buildTextField(
                       controller: CreateShopController.whatsapp,
+                      label: "WhatsApp (optional)",
                       keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(
-                        labelText: "WhatsApp",
-                        filled: true,
-                        border: OutlineInputBorder(),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Services with Price
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text("Services",
+                          style: Theme.of(context).textTheme.titleMedium),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildTextField(
+                            controller: serviceNameController,
+                            label: "Service",
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildTextField(
+                            controller: servicePriceController,
+                            label: "Price",
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                        IconButton(
+                          icon:
+                              const Icon(Icons.add_circle, color: Colors.blue),
+                          onPressed: _addService,
+                        )
+                      ],
+                    ),
+                    if (services.isNotEmpty)
+                      Wrap(
+                        spacing: 8,
+                        children: services
+                            .map((s) => Chip(
+                                  label: Text("${s.name} - \$${s.price}"),
+                                  onDeleted: () => setState(() {
+                                    services.remove(s);
+                                  }),
+                                ))
+                            .toList(),
                       ),
-                    ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
-                    // Services - Multi Select
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: servicesList.map((service) {
-                        final isSelected = selectedServices.contains(service);
-                        return FilterChip(
-                          label: Text(service),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            setState(() {
-                              if (selected) {
-                                selectedServices.add(service);
-                              } else {
-                                selectedServices.remove(service);
-                              }
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Profile Image Picker
+                    // Profile Image
                     ElevatedButton.icon(
                       onPressed: () {
-                        context.read<ShopsBloc>().add(PickImageEvent());
+                        context.read<ShopsBloc>().add(PickProfileImageEvent());
                       },
                       icon: const Icon(Icons.image),
                       label: const Text("Pick Profile Image"),
                     ),
                     const SizedBox(height: 16),
 
-                    // Work Images Picker
+                    // Work Images
                     ElevatedButton.icon(
                       onPressed: () {
-                        context.read<ShopsBloc>().add(PickWorkImagesEvent());
+                        context.read<ShopsBloc>().add(PickShopImageEvent());
                       },
                       icon: const Icon(Icons.collections),
                       label: const Text("Pick Work Images"),
                     ),
                     const SizedBox(height: 16),
+
                     if (profileImageUrl != null)
-                      ListTile(
-                        leading: CircleAvatar(
-                            backgroundImage: NetworkImage(profileImageUrl!)),
-                        title: const Text('Profile Image'),
-                        subtitle: Text(profileImageUrl!),
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundImage: NetworkImage(profileImageUrl!),
                       ),
 
-                    if (workImageUrls.isNotEmpty)
+                    if (_workImages.isNotEmpty)
                       GridView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: workImageUrls.length,
+                        itemCount: _workImages.length,
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                                mainAxisSpacing: 8,
-                                crossAxisSpacing: 8),
+                          crossAxisCount: 3,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                        ),
                         itemBuilder: (_, i) => ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: Image.network(workImageUrls[i],
-                              fit: BoxFit.cover),
+                          child: Image.file(
+                            _workImages[i],
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
 
-                    // Submit Button
+                    const SizedBox(height: 24),
                     state is ShopsLoadingState
-                        ? const Center(child: CircularProgressIndicator())
+                        ? const CircularProgressIndicator()
                         : ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              minimumSize: const Size(double.infinity, 50),
-                            ),
+                                minimumSize: const Size(double.infinity, 50)),
                             onPressed: () {
                               if (_formKey.currentState!.validate()) {
-                                final create = CreateShopEvent(
-                                  shopOwnerId: firebaseUser,
-                                  shopName:
-                                      CreateShopController.shopName.text.trim(),
-                                  category: selectedCategory!,
-                                  openingDays: selectedDays!,
-                                  operningTimes: selectedTimes!,
-                                  location:
-                                      CreateShopController.location.text.trim(),
-                                  phone: CreateShopController.phone.text.trim(),
-                                  whatsapp:
-                                      CreateShopController.whatsapp.text.trim(),
-                                  services: selectedServices.join(", "),
-                                  profileImg: profileImageUrl ?? '',
-                                  dateJoined: _formatDateHuman(DateTime.now()),
-                                  distanceToUser: 0.0,
-                                  cordinates: [
-                                    double.tryParse(
-                                        CreateShopController.latitude.text),
-                                    double.tryParse(
-                                        CreateShopController.longitude.text),
-                                  ],
-                                  isOpen: true,
-                                )..workImgs.addAll(workImageUrls);
+                                context.read<ShopsBloc>().add(
+                                      CreateShopEvent(
+                                        shopOwnerId: firebaseUser,
+                                        shopName: CreateShopController
+                                            .shopName.text
+                                            .trim(),
+                                        category: selectedCategory!,
+                                        openingDays: selectedDays!,
+                                        operningTimes: selectedTimes!,
+                                        location: CreateShopController
+                                            .location.text
+                                            .trim(),
+                                        phone: CreateShopController.phone.text
+                                            .trim(),
+                                        whatsapp: CreateShopController
+                                            .whatsapp.text
+                                            .trim(),
+                                        services: services,
 
-                                context.read<ShopsBloc>().add(create);
+                                        profileImgFile:
+                                            _profileImage, // 👈 file for uploading
+                                        profileImg: profileImageUrl,
+
+                                        workImgFiles: _workImages,
+                                        dateJoined:
+                                            _formatDateHuman(DateTime.now()),
+                                        isOpen: true,
+                                      ),
+                                    );
                               }
                             },
                             child: const Text("Submit"),
@@ -314,6 +314,44 @@ class _CreateShopPageState extends State<CreateShopPage> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    String? Function(String?)? validator,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return TextFormField(
+      controller: controller,
+      validator: validator,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: label,
+        filled: true,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  Widget _buildDropdown({
+    required String label,
+    required String? value,
+    required List<String> items,
+    required Function(String?) onChanged,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      items:
+          items.map((i) => DropdownMenuItem(value: i, child: Text(i))).toList(),
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        filled: true,
+      ),
+      validator: (val) => val == null ? "Please select $label" : null,
     );
   }
 }

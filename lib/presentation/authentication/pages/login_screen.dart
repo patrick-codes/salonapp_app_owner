@@ -134,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen>
             type: ToastificationType.error,
           );
         } else if (state is AuthenticatedState) {
-          Navigator.pushReplacementNamed(context, '/mainhome');
+          Navigator.pushReplacementNamed(context, '/home');
           toastification.show(
             showProgressBar: false,
             description: Column(

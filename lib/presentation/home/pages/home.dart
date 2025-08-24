@@ -11,27 +11,18 @@ import '../../../helpers/text style/text_style.dart';
 import '../../../helpers/widgets/app_bar.dart';
 import '../../../helpers/widgets/grid_view.dart';
 import '../../../helpers/widgets/show_up_animation.dart';
+import '../../location/bloc/location_bloc.dart';
 import '../../notifications/components/local notification/local_notification_service.dart';
 
 class HomePage extends StatefulWidget {
-  HomePage({super.key});
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  void initState() {
-    super.initState();
-    Future.delayed(Duration.zero, () {
-      NotificationService.onNotificationClick = (String? payload) {
-        if (payload != null) {
-          Navigator.pushNamed(context, payload);
-        }
-      };
-    });
-  }
-
+class _HomePageState extends State<HomePage>
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   List<Icon> icons = <Icon>[
     const Icon(
       MingCute.scissors_line,
@@ -73,6 +64,42 @@ class _HomePageState extends State<HomePage> {
     "undraw_people_ka7y",
     "undraw_pie-graph_8m6b",
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    final locationState = BlocProvider.of<LocationBloc>(context).state;
+    if (locationState is LocationFetchedState) {}
+    Future.delayed(Duration.zero, () {
+      NotificationService.onNotificationClick = (String? payload) {
+        if (payload != null) {
+          Navigator.pushNamed(context, payload);
+        }
+      };
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        context.read<LocationBloc>().wentToSettings) {
+      context.read<LocationBloc>().wentToSettings = false;
+
+      Future.delayed(Duration(seconds: 2), () {
+        context.read<LocationBloc>().add(LoadLocationEvent());
+      });
+    }
+  }
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
@@ -208,7 +235,7 @@ class _HomePageState extends State<HomePage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             PrimaryText(
-              text: "Active Shops",
+              text: "Active Shop",
               color: Colors.black,
               fontWeight: FontWeight.w600,
               size: 16,
@@ -216,7 +243,7 @@ class _HomePageState extends State<HomePage> {
             GestureDetector(
               onTap: () => scrollBottomSheet(context),
               child: PrimaryText(
-                text: "see more",
+                text: "view all",
                 color: iconGrey,
                 fontWeight: FontWeight.w600,
                 size: 14,

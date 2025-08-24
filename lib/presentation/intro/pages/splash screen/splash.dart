@@ -44,8 +44,7 @@ class _SplashScreenState extends State<SplashScreen>
       listener: (BuildContext context, state) async {
         if (state is AuthenticatedState) {
           await Future.delayed(const Duration(seconds: 3));
-          Navigator.pushNamedAndRemoveUntil(
-              context, '/mainhome', (route) => false);
+          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
         } else if (state is UnAuthenticatedState) {
           await Future.delayed(const Duration(seconds: 3));
           Navigator.pushNamedAndRemoveUntil(

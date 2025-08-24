@@ -2,8 +2,8 @@ part of 'location_bloc.dart';
 
 sealed class LocationEvent {}
 
-final class GetLocationEvent extends LocationEvent {}
+class CheckLocationServices extends LocationEvent {}
 
-final class LoadLocationEvent extends LocationEvent {}
+class RequestLocationPermission extends LocationEvent {}
 
-final class GetCordinatesAddressEvent extends LocationEvent {}
+class LoadLocationEvent extends LocationEvent {}

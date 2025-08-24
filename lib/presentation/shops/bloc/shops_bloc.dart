@@ -1,16 +1,13 @@
-import 'dart:convert';
 import 'dart:io';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:googleapis_auth/auth_io.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../data/image uploader/image_uploader.dart';
 import '../../location/bloc/location_bloc.dart';
 import '../repository/data rmodel/service_model.dart';
 import '../repository/salonservices helper/fetch_services_helper.dart';
-import 'package:googleapis/drive/v3.dart' as drive;
 
 part 'shops_events.dart';
 part 'shops_state.dart';
@@ -20,138 +17,22 @@ class ShopsBloc extends Bloc<ShopsEvent, ShopsState> {
   ShopModel? singleServiceMan;
   ShopModel? singleService;
   final LocationBloc locationBloc;
+  final firebaseUser = FirebaseAuth.instance.currentUser!.uid;
+
   List<ShopModel>? serviceman2 = [];
   List<ShopModel>? serviceman3 = [];
   static SalonServiceHelper salonHelper = SalonServiceHelper();
   int serviceNum = 0;
   int num = 0;
   int total = 0;
-  File? _image;
-  bool isLoading = false;
-  String imageUrl = '';
 
   ShopsBloc(this.locationBloc) : super(ShopInitial()) {
     on<ViewShopsEvent>(fetchShops);
     on<SearchShopEvent>(searchShops);
+    on<PickProfileImageEvent>(onPickImage);
+    on<PickShopImageEvent>(onPickWorkImage);
     on<CreateShopEvent>(createShop);
-    on<ViewSingleShopEvent>(fetchSingleShop);
-    on<PickImageEvent>(pickImage);
-    on<PickWorkImagesEvent>(pickWorkImages);
   }
-
-  Future<void> pickImage(PickImageEvent event, Emitter<ShopsState> emit) async {
-    emit(ImageLoadingState());
-    debugPrint("Image Loading......");
-
-    try {
-      final pickedFile =
-          await ImagePicker().pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
-        _image = File(pickedFile.path);
-        emit(ImagePickSuccesState(imgUrl: _image));
-        debugPrint("Image picked: $_image");
-      } else {
-        emit(ImagePickFailureState(error: 'No image was selected'));
-        debugPrint("error: No image was selected");
-      }
-    } catch (e) {
-      ImagePickFailureState(error: e.toString());
-      debugPrint("Error: $e");
-    }
-  }
-
-  Future<void> pickWorkImages(
-      PickWorkImagesEvent event, Emitter<ShopsState> emit) async {
-    emit(
-        ImageLoadingState()); // you can reuse your loading state or create WorkImagesLoadingState
-    debugPrint("Picking multiple images...");
-
-    try {
-      final pickedFiles = await ImagePicker().pickMultiImage();
-      if (pickedFiles.isEmpty) {
-        emit(ImagePickFailureState(error: 'No images selected'));
-        return;
-      }
-
-      final urls = <String>[];
-      for (final x in pickedFiles) {
-        final fileId = await uploadImageToGoogleDrive(File(x.path));
-        if (fileId != null) {
-          await makeFilePublic(fileId);
-          urls.add(getPublicImageUrl(fileId));
-        }
-      }
-
-      if (urls.isEmpty) {
-        emit(ImagePickFailureState(error: 'Upload failed'));
-        return;
-      }
-
-      // keep your old success state if you have it…
-      emit(MultipleImagePickSuccesState(imgUrls: urls));
-
-      // …and also emit this new, explicit “uploaded” state with public URLs:
-      emit(WorkImagesUploadedSuccessState(urls: urls));
-    } catch (e) {
-      emit(ImagePickFailureState(error: e.toString()));
-      debugPrint("Error: $e");
-    }
-  }
-
-  Future<AuthClient> getAuthClient() async {
-    final serviceAccount = await rootBundle.loadString(
-        'assets/animations/formidable-bank-325022-43d02766ad7a.json');
-    final credentials =
-        ServiceAccountCredentials.fromJson(json.decode(serviceAccount));
-
-    final client = await clientViaServiceAccount(
-      credentials,
-      [drive.DriveApi.driveFileScope],
-    );
-
-    return client;
-  }
-
-  Future<String?> uploadImageToGoogleDrive(File? imageFile) async {
-    final client = await getAuthClient();
-    final driveApi = drive.DriveApi(client);
-
-    var fileMetadata = drive.File();
-    fileMetadata.name = imageFile!.path.split('/').last;
-    fileMetadata.parents = ["1s7GvjUetBcrdoo0qHffuRRAQDshjiU3n"];
-
-    var media = drive.Media(imageFile.openRead(), imageFile.lengthSync());
-
-    var response =
-        await driveApi.files.create(fileMetadata, uploadMedia: media);
-    client.close();
-
-    if (response.id != null) {
-      print("Uploaded File ID: ${response.id}");
-      return response.id;
-    } else {
-      print("Upload failed");
-      return null;
-    }
-  }
-
-  Future<void> makeFilePublic(String fileId) async {
-    final client = await getAuthClient();
-    final driveApi = drive.DriveApi(client);
-
-    var permission = drive.Permission();
-    permission.type = "anyone";
-    permission.role = "reader";
-
-    await driveApi.permissions.create(permission, fileId);
-    print("File is now public.");
-    client.close();
-  }
-
-  String getPublicImageUrl(String fileId) {
-    return "https://drive.google.com/uc?id=$fileId";
-  }
-
   void onSearchChanged(String query) {
     serviceman = serviceman2!
         .where((servicemen) => servicemen.shopName!
@@ -174,35 +55,91 @@ class ShopsBloc extends Bloc<ShopsEvent, ShopsState> {
     }
   }
 
+  Future<void> onPickImage(
+      PickProfileImageEvent event, Emitter<ShopsState> emit) async {
+    try {
+      final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (picked != null) {
+        final file = File(picked.path);
+        final url = await CloudinaryHelper2.uploadImage(File(picked.path));
+        if (url != null) {
+          emit(ImagePickedState(pickedFile: file, imageUrl: url));
+        }
+      }
+    } catch (e) {
+      debugPrint('${e.toString()}');
+      emit(ShopCreateFailureState(error: e.toString()));
+    }
+  }
+
+  Future<void> onPickWorkImage(
+      PickShopImageEvent event, Emitter<ShopsState> emit) async {
+    try {
+      final pickedFiles = await ImagePicker().pickMultiImage();
+      if (pickedFiles != null && pickedFiles.isNotEmpty) {
+        final files = pickedFiles.map((e) => File(e.path)).toList();
+        emit(LocalImagesPickedState(files)); // just send picked files
+      }
+    } catch (e) {
+      debugPrint('Error picking images: $e');
+      emit(ShopCreateFailureState(error: e.toString()));
+    }
+  }
+
   Future<void> createShop(
-      CreateShopEvent event, Emitter<ShopsState> emit) async {
+    CreateShopEvent event,
+    Emitter<ShopsState> emit,
+  ) async {
     try {
       emit(ShopsLoadingState());
-      debugPrint("Creating shop service......");
-      final shop = ShopModel(
-        shopOwnerId: event.shopOwnerId,
+
+      String? profileImgUrl;
+      List<String> workImgUrls = [];
+
+      //  Upload profile image if picked
+      if (event.profileImgFile != null) {
+        profileImgUrl =
+            await CloudinaryHelper2.uploadImage(event.profileImgFile!);
+      }
+
+      if (event.workImgFiles != null && event.workImgFiles!.isNotEmpty) {
+        for (var file in event.workImgFiles!) {
+          final url = await CloudinaryHelper.uploadImage(file);
+          if (url != null) workImgUrls.add(url);
+        }
+      }
+
+      //  Get coordinates
+      final position = await Geolocator.getCurrentPosition();
+      event.cordinates = [position.latitude, position.longitude];
+
+      //  Save shop to Firestore with uploaded URLs
+      final shopData = ShopModel(
+        shopOwnerId: firebaseUser,
         shopName: event.shopName,
         category: event.category,
+        cordinates: event.cordinates,
         openingDays: event.openingDays,
         operningTimes: event.operningTimes,
         location: event.location,
         phone: event.phone,
         whatsapp: event.whatsapp,
         services: event.services,
-        profileImg: event.profileImg,
+        profileImg: profileImgUrl ?? "", //  uploaded profile image URL
         dateJoined: event.dateJoined,
-        workImgs: event.workImgs,
-        cordinates: event.cordinates,
+        workImgs: workImgUrls, //  use uploaded work image URLs
         distanceToUser: event.distanceToUser,
         isOpen: event.isOpen,
       );
-      salonHelper.createService(shop);
-      emit(
-          ShopCreatedSuccesState(message: 'Shop service created succesfuly!!'));
-      debugPrint("Shop service created succesfuly!!");
-    } catch (e) {
-      emit(ShopCreateFailureState(error: e.toString()));
-      debugPrint(e.toString());
+
+      await salonHelper.createService(shopData);
+
+      debugPrint('✅ Shop Created Successfully');
+      emit(ShopCreatedSuccesState(message: 'Shop Created Successfully'));
+    } catch (e, st) {
+      debugPrint('❌ Failed to create shop: $e');
+      debugPrintStack(stackTrace: st);
+      emit(ShopCreateFailureState(error: "Failed to create shop: $e"));
     }
   }
 
@@ -246,34 +183,5 @@ class ShopsBloc extends Bloc<ShopsEvent, ShopsState> {
       emit(ShopsFetchFailureState(errorMessage: error.toString()));
     }
     return serviceman;
-  }
-
-  Future<ShopModel?> fetchSingleShop(
-      ViewSingleShopEvent event, Emitter<ShopsState> emit) async {
-    try {
-      String? userId = event.id;
-      emit(ShopsLoadingState());
-      singleServiceMan = await salonHelper.fetchSinglesalonshops(userId);
-
-      if (singleServiceMan != null) {
-        singleService = singleServiceMan;
-        emit(SingleShopsFetchedState(shop: singleService));
-        debugPrint("Single Shop: $singleService");
-        total = serviceNum;
-      } else {
-        emit(ShopsFetchFailureState(errorMessage: "Shop not found"));
-        debugPrint("Single Shop not found");
-      }
-      //}
-      print(total);
-    } on FirebaseAuthException catch (error) {
-      emit(ShopsFetchFailureState(errorMessage: error.toString()));
-      debugPrint(error.toString());
-    } catch (error) {
-      emit(ShopsFetchFailureState(errorMessage: error.toString()));
-      debugPrint('Error:${error.toString()}');
-    }
-
-    return singleService;
   }
 }
