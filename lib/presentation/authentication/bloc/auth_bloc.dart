@@ -1,18 +1,13 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../notifications/components/local notification/local_notification_service.dart';
 import '../components/auth_exception.dart';
 import '../repository/create_account_helper.dart';
 import '../repository/data model/user_model.dart';
 import '../repository/user_helper.dart';
-import 'package:googleapis/drive/v3.dart' as drive;
-import 'package:googleapis_auth/auth_io.dart';
-import 'package:flutter/services.dart';
 
 part 'auth_events.dart';
 part 'auth_state.dart';

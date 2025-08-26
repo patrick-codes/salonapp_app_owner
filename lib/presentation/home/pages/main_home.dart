@@ -3,7 +3,6 @@ import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:icons_plus/icons_plus.dart';
 import '../../../helpers/constants/color_constants.dart';
 import '../../profile screen/pages/profile_page.dart';
-import '../../shops/pages/create_shopservice_page.dart';
 import 'home.dart';
 
 class MainHomePage extends StatefulWidget {

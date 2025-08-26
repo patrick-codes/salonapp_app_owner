@@ -1,8 +1,14 @@
 import 'dart:io';
+import 'package:dotted_border/dotted_border.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:icons_plus/icons_plus.dart';
 import 'package:intl/intl.dart';
+import '../../../helpers/constants/color_constants.dart';
+import '../../../helpers/text style/text_style.dart';
+import '../../../helpers/widgets/app_bar.dart';
+import '../../../helpers/widgets/custom_button.dart';
 import '../../authentication/bloc/auth_bloc.dart';
 import '../bloc/shops_bloc.dart';
 import '../components/createservice_controllers.dart';
@@ -66,7 +72,7 @@ class _CreateShopPageState extends State<CreateShopPage> {
 
     if (name.isNotEmpty && price != null) {
       setState(() {
-        services.add(Service(name: name, price: price)); // 👈 Use Service
+        services.add(Service(name: name, price: price));
       });
       serviceNameController.clear();
       servicePriceController.clear();
@@ -105,6 +111,19 @@ class _CreateShopPageState extends State<CreateShopPage> {
       },
       builder: (context, state) {
         return Scaffold(
+          backgroundColor: const Color.fromARGB(255, 242, 242, 242),
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            automaticallyImplyLeading: false,
+            leadingWidth: 10,
+            title: Row(
+              children: [
+                avatarContainer(),
+                const SizedBox(width: 8),
+                titleContainer(context),
+              ],
+            ),
+          ),
           body: SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
@@ -112,6 +131,8 @@ class _CreateShopPageState extends State<CreateShopPage> {
                 key: _formKey,
                 child: Column(
                   children: [
+                    createShopContainer(context),
+                    const SizedBox(height: 15),
                     // Shop Name
                     _buildTextField(
                       controller: CreateShopController.shopName,
@@ -317,6 +338,112 @@ class _CreateShopPageState extends State<CreateShopPage> {
     );
   }
 
+  Container avatarContainer() {
+    return Container(
+      height: 40,
+      width: 40,
+      decoration: BoxDecoration(
+        color: Colors.black12,
+        borderRadius: BorderRadius.circular(40),
+      ),
+      child: Center(
+        child: Icon(
+          MingCute.scissors_line,
+        ),
+      ),
+    );
+  }
+
+  Widget titleContainer(BuildContext context) {
+    return Expanded(
+      flex: 1,
+      child: Container(
+        height: 35,
+        width: 180,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200.withOpacity(0.4),
+          border: Border.all(
+            width: 1,
+            color: Colors.grey.shade400.withOpacity(0.5),
+          ),
+          borderRadius: BorderRadius.circular(40),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 5.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                "Create Shop",
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12.5,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget createShopContainer(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        context.read<ShopsBloc>().add(PickProfileImageEvent());
+      },
+      child: Container(
+        height: 180,
+        padding: const EdgeInsets.all(15),
+        width: MediaQuery.of(context).size.width,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(5),
+          color: Colors.white,
+          boxShadow: const [
+            BoxShadow(
+              blurRadius: 5,
+              spreadRadius: 0.5,
+              color: Color.fromARGB(255, 234, 233, 233),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                MingCute.camera_2_fill,
+                color: Colors.black54,
+                size: 50,
+              ),
+              SizedBox(height: 10),
+              SizedBox(
+                width: 273,
+                child: Column(
+                  children: [
+                    Text(
+                      overflow: TextOverflow.visible,
+                      textAlign: TextAlign.center,
+                      softWrap: true,
+                      "Upload a clear profile picture for your shop.",
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                            fontSize: 12,
+                            color: Colors.black54,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 15),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -328,9 +455,20 @@ class _CreateShopPageState extends State<CreateShopPage> {
       validator: validator,
       keyboardType: keyboardType,
       decoration: InputDecoration(
+        fillColor: const Color.fromARGB(255, 199, 208, 212),
         labelText: label,
+        labelStyle: TextStyle(
+          fontSize: 15,
+          color: blackColor,
+        ),
         filled: true,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: Colors.red,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(),
       ),
     );
   }
@@ -343,13 +481,20 @@ class _CreateShopPageState extends State<CreateShopPage> {
   }) {
     return DropdownButtonFormField<String>(
       value: value,
+      isDense: true,
       items:
           items.map((i) => DropdownMenuItem(value: i, child: Text(i))).toList(),
       onChanged: onChanged,
+      alignment: AlignmentDirectional.center,
       decoration: InputDecoration(
         labelText: label,
+        labelStyle: TextStyle(
+          fontSize: 15,
+          color: blackColor,
+        ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
+        fillColor: const Color.fromARGB(255, 199, 208, 212),
       ),
       validator: (val) => val == null ? "Please select $label" : null,
     );

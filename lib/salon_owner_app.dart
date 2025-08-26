@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salonapp_app_owner/presentation/appointments/pages/appointments_page.dart';
 import 'package:salonapp_app_owner/presentation/shops/pages/create_shopservice_page.dart';
-import 'package:shimmer/main.dart';
 import 'package:toastification/toastification.dart';
 import 'helpers/constants/color_constants.dart';
 import 'presentation/authentication/pages/login_screen.dart';

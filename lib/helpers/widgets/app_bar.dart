@@ -20,24 +20,26 @@ class CustomAppBar extends StatelessWidget {
         children: [
           avatarContainer(),
           const SizedBox(width: 8),
-          locationContainer(context),
+          titleContainer(context),
         ],
       ),
       actions: [
         GestureDetector(
-          onTap: () {},
+          onTap: () {
+            Navigator.pushNamed(context, '/appointment');
+          },
           child: count! > 0
               ? Badge(
                   label: Text("$count"),
                   smallSize: 5,
                   child: Icon(
                     MingCute.notification_line,
-                    color: iconGrey,
+                    color: Colors.black87,
                   ),
                 )
               : Icon(
                   MingCute.notification_line,
-                  color: iconGrey,
+                  color: Colors.black87,
                 ),
         ),
         SizedBox(width: 17),
@@ -50,60 +52,45 @@ class CustomAppBar extends StatelessWidget {
       height: 40,
       width: 40,
       decoration: BoxDecoration(
-        image: DecorationImage(
-          fit: BoxFit.cover,
-          image: Image.asset(
-            "assets/images/img-one.jpg",
-          ).image,
-        ),
-        color: const Color.fromARGB(255, 147, 227, 249),
+        color: Colors.black12,
         borderRadius: BorderRadius.circular(40),
+      ),
+      child: Center(
+        child: Icon(
+          MingCute.user_5_line,
+        ),
       ),
     );
   }
 
-  Container locationContainer(BuildContext context) {
-    return Container(
-      height: 35,
-      width: 180,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200.withOpacity(0.4),
-        border: Border.all(
-          width: 1,
-          color: Colors.grey.shade400.withOpacity(0.5),
+  Widget titleContainer(BuildContext context) {
+    return Expanded(
+      flex: 1,
+      child: Container(
+        height: 35,
+        width: 180,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200.withOpacity(0.4),
+          border: Border.all(
+            width: 1,
+            color: Colors.grey.shade400.withOpacity(0.5),
+          ),
+          borderRadius: BorderRadius.circular(40),
         ),
-        borderRadius: BorderRadius.circular(40),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 5.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.add_location_outlined,
-                  size: 20,
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  "Weija-SCC, Accra",
-                  style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                ),
-              ],
-            ),
-            const Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 15,
-              weight: 8,
-              grade: 8,
-              opticalSize: 8,
-              color: Colors.black54,
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 5.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                "Admin Dashboard",
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12.5,
+                    ),
+              ),
+            ],
+          ),
         ),
       ),
     );

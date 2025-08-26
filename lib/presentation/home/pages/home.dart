@@ -7,6 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:salonapp_app_owner/helpers/widgets/custom_button.dart';
 import 'package:salonapp_app_owner/presentation/appointments/bloc/appointment_bloc.dart';
 import 'package:salonapp_app_owner/presentation/authentication/bloc/auth_bloc.dart';
+import '../../../helpers/config/size_config.dart';
 import '../../../helpers/text style/text_style.dart';
 import '../../../helpers/widgets/app_bar.dart';
 import '../../../helpers/widgets/grid_view.dart';
@@ -116,23 +117,47 @@ class _HomePageState extends State<HomePage>
           debugPrint("Unread Count: $unreadCount");
         }
         return Scaffold(
+          backgroundColor: const Color.fromARGB(255, 242, 242, 242),
           appBar: PreferredSize(
             preferredSize: const Size.fromHeight(65),
             child: CustomAppBar(
               count: unreadCount,
             ),
           ),
-          floatingActionButton: FloatingActionButton(
-            shape: OvalBorder(),
-            child: Icon(
-              MingCute.add_fill,
-              color: whiteColor,
-              size: 30,
+          bottomNavigationBar: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(context, '/createshop');
+              },
+              child: Container(
+                height: 55,
+                width: SizeConfig.screenWidth,
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        MingCute.add_circle_fill,
+                        color: whiteColor,
+                        size: 25,
+                      ),
+                      SizedBox(width: 5),
+                      PrimaryText(
+                        text: 'Create Your Shop',
+                        size: 14,
+                        color: whiteColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            onPressed: () {
-              Navigator.pushNamed(context, '/createshop');
-            },
-            backgroundColor: blackColor,
           ),
           body: SafeArea(
             child: SingleChildScrollView(
@@ -230,28 +255,19 @@ class _HomePageState extends State<HomePage>
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: 5),
+        SizedBox(height: 15),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             PrimaryText(
-              text: "Active Shop",
+              text: "Active Shops",
               color: Colors.black,
               fontWeight: FontWeight.w600,
-              size: 16,
-            ),
-            GestureDetector(
-              onTap: () => scrollBottomSheet(context),
-              child: PrimaryText(
-                text: "view all",
-                color: iconGrey,
-                fontWeight: FontWeight.w600,
-                size: 14,
-              ),
+              size: 14,
             ),
           ],
         ),
-        SizedBox(height: 15),
+        SizedBox(height: 8),
         ShowUpAnimation(
           delay: 300,
           child: buildShopCard(
@@ -267,14 +283,14 @@ class _HomePageState extends State<HomePage>
             Colors.grey.shade200,
           ),
         ),
-        SizedBox(height: 25),
+        SizedBox(height: 20),
         PrimaryText(
           text: "Dashboard",
           color: Colors.black,
           fontWeight: FontWeight.w600,
-          size: 16,
+          size: 15,
         ),
-        SizedBox(height: 10),
+        SizedBox(height: 8),
         GridViewComponent(),
       ],
     );
@@ -397,7 +413,7 @@ class _HomePageState extends State<HomePage>
                     SizedBox(height: 20),
                     GestureDetector(
                       onTap: () {
-                        Navigator.pushNamed(context, '/appointment');
+                        // Navigator.pushNamed(context, '/appointment');
                       },
                       child: Container(
                         height: 30,
