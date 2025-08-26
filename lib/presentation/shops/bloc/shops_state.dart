@@ -70,6 +70,8 @@ class EmptyShopState extends ShopsState {
   EmptyShopState({required this.message});
 }
 
+class ProfileImageLoadingState extends ShopsState {}
+
 class ImagePickedState extends ShopsState {
   final String imageUrl;
   File? pickedFile;

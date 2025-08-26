@@ -59,6 +59,7 @@ class ShopsBloc extends Bloc<ShopsEvent, ShopsState> {
       PickProfileImageEvent event, Emitter<ShopsState> emit) async {
     try {
       final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+      emit(ProfileImageLoadingState());
       if (picked != null) {
         final file = File(picked.path);
         final url = await CloudinaryHelper2.uploadImage(File(picked.path));

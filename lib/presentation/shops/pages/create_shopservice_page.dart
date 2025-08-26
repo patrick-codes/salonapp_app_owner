@@ -1,14 +1,12 @@
 import 'dart:io';
-import 'package:dotted_border/dotted_border.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:intl/intl.dart';
+import '../../../helpers/config/size_config.dart';
 import '../../../helpers/constants/color_constants.dart';
 import '../../../helpers/text style/text_style.dart';
-import '../../../helpers/widgets/app_bar.dart';
-import '../../../helpers/widgets/custom_button.dart';
 import '../../authentication/bloc/auth_bloc.dart';
 import '../bloc/shops_bloc.dart';
 import '../components/createservice_controllers.dart';
@@ -44,7 +42,7 @@ class _CreateShopPageState extends State<CreateShopPage> {
   List<Service> services = [];
   List<String> workImageUrls = [];
   String? profileImageUrl;
-
+  bool? isLoading;
   File? _profileImage;
   List<File> _workImages = [];
 
@@ -108,11 +106,14 @@ class _CreateShopPageState extends State<CreateShopPage> {
         } else if (state is AuthLogoutSuccesState) {
           Navigator.pushNamed(context, '/');
         }
+        // else if (state is ProfileImageLoadingState) {}
       },
       builder: (context, state) {
         return Scaffold(
-          backgroundColor: const Color.fromARGB(255, 242, 242, 242),
+          backgroundColor: whiteColor,
           appBar: AppBar(
+            elevation: 0.5,
+            shadowColor: Colors.grey.shade100,
             backgroundColor: Colors.white,
             automaticallyImplyLeading: false,
             leadingWidth: 10,
@@ -131,7 +132,75 @@ class _CreateShopPageState extends State<CreateShopPage> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    createShopContainer(context),
+                    GestureDetector(
+                      onTap: () {
+                        context.read<ShopsBloc>().add(PickProfileImageEvent());
+                      },
+                      child: Container(
+                        height: 182,
+                        padding: const EdgeInsets.all(15),
+                        width: MediaQuery.of(context).size.width,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            width: 1,
+                            color: Colors.grey.shade400,
+                          ),
+                          borderRadius: BorderRadius.circular(15),
+                          color: Colors.white,
+                          image: DecorationImage(
+                            fit: BoxFit.cover,
+                            image: NetworkImage(profileImageUrl ??
+                                'https://unsplash.com/photos/barber-shop-tools-on-old-wooden-background-cCRNOTyXl18'),
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              blurRadius: 5,
+                              spreadRadius: 0.5,
+                              color: Color.fromARGB(255, 234, 233, 233),
+                            ),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.all(20.0),
+                          child: profileImageUrl == null
+                              ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      MingCute.camera_2_fill,
+                                      color: Colors.black54,
+                                      size: 50,
+                                    ),
+                                    SizedBox(height: 10),
+                                    SizedBox(
+                                      width: 273,
+                                      child: Column(
+                                        children: [
+                                          Text(
+                                            overflow: TextOverflow.visible,
+                                            textAlign: TextAlign.center,
+                                            softWrap: true,
+                                            "Upload a clear profile picture for your shop.",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium!
+                                                .copyWith(
+                                                  fontSize: 12,
+                                                  color: Colors.black54,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(height: 15),
+                                  ],
+                                )
+                              : SizedBox.shrink(),
+                        ),
+                      ),
+                    ),
+
                     const SizedBox(height: 15),
                     // Shop Name
                     _buildTextField(
@@ -192,7 +261,7 @@ class _CreateShopPageState extends State<CreateShopPage> {
                     // WhatsApp
                     _buildTextField(
                       controller: CreateShopController.whatsapp,
-                      label: "WhatsApp (optional)",
+                      label: "WhatsApp",
                       keyboardType: TextInputType.phone,
                     ),
                     const SizedBox(height: 24),
@@ -232,7 +301,11 @@ class _CreateShopPageState extends State<CreateShopPage> {
                         spacing: 8,
                         children: services
                             .map((s) => Chip(
-                                  label: Text("${s.name} - \$${s.price}"),
+                                  side: BorderSide(
+                                    color: Colors.lightBlue,
+                                  ),
+                                  backgroundColor: Colors.grey.shade100,
+                                  label: Text("${s.name} - \GHS${s.price}"),
                                   onDeleted: () => setState(() {
                                     services.remove(s);
                                   }),
@@ -241,31 +314,43 @@ class _CreateShopPageState extends State<CreateShopPage> {
                       ),
                     const SizedBox(height: 24),
 
-                    // Profile Image
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        context.read<ShopsBloc>().add(PickProfileImageEvent());
-                      },
-                      icon: const Icon(Icons.image),
-                      label: const Text("Pick Profile Image"),
-                    ),
-                    const SizedBox(height: 16),
-
                     // Work Images
-                    ElevatedButton.icon(
-                      onPressed: () {
+                    GestureDetector(
+                      onTap: () {
                         context.read<ShopsBloc>().add(PickShopImageEvent());
                       },
-                      icon: const Icon(Icons.collections),
-                      label: const Text("Pick Work Images"),
-                    ),
-                    const SizedBox(height: 16),
-
-                    if (profileImageUrl != null)
-                      CircleAvatar(
-                        radius: 40,
-                        backgroundImage: NetworkImage(profileImageUrl!),
+                      child: Container(
+                        height: 40,
+                        width: MediaQuery.of(context).size.width,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.grey.shade400,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                MingCute.photo_album_line,
+                                size: 18,
+                                color: iconGrey,
+                              ),
+                              SizedBox(width: 5),
+                              PrimaryText(
+                                text: 'Pick work images',
+                                size: 13,
+                                color: iconGrey,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
+                    ),
+
+                    const SizedBox(height: 16),
 
                     if (_workImages.isNotEmpty)
                       GridView.builder(
@@ -288,46 +373,78 @@ class _CreateShopPageState extends State<CreateShopPage> {
                       ),
 
                     const SizedBox(height: 24),
-                    state is ShopsLoadingState
-                        ? const CircularProgressIndicator()
-                        : ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                                minimumSize: const Size(double.infinity, 50)),
-                            onPressed: () {
-                              if (_formKey.currentState!.validate()) {
-                                context.read<ShopsBloc>().add(
-                                      CreateShopEvent(
-                                        shopOwnerId: firebaseUser,
-                                        shopName: CreateShopController
-                                            .shopName.text
-                                            .trim(),
-                                        category: selectedCategory!,
-                                        openingDays: selectedDays!,
-                                        operningTimes: selectedTimes!,
-                                        location: CreateShopController
-                                            .location.text
-                                            .trim(),
-                                        phone: CreateShopController.phone.text
-                                            .trim(),
-                                        whatsapp: CreateShopController
-                                            .whatsapp.text
-                                            .trim(),
-                                        services: services,
+                    GestureDetector(
+                      onTap: () {
+                        if (_formKey.currentState!.validate()) {
+                          context.read<ShopsBloc>().add(
+                                CreateShopEvent(
+                                  shopOwnerId: firebaseUser,
+                                  shopName:
+                                      CreateShopController.shopName.text.trim(),
+                                  category: selectedCategory!,
+                                  openingDays: selectedDays!,
+                                  operningTimes: selectedTimes!,
+                                  location:
+                                      CreateShopController.location.text.trim(),
+                                  phone: CreateShopController.phone.text.trim(),
+                                  whatsapp:
+                                      CreateShopController.whatsapp.text.trim(),
+                                  services: services,
 
-                                        profileImgFile:
-                                            _profileImage, // 👈 file for uploading
-                                        profileImg: profileImageUrl,
+                                  profileImgFile:
+                                      _profileImage, // 👈 file for uploading
+                                  profileImg: profileImageUrl,
 
-                                        workImgFiles: _workImages,
-                                        dateJoined:
-                                            _formatDateHuman(DateTime.now()),
-                                        isOpen: true,
+                                  workImgFiles: _workImages,
+                                  dateJoined: _formatDateHuman(DateTime.now()),
+                                  isOpen: true,
+                                ),
+                              );
+                        }
+                      },
+                      child: Container(
+                        height: 55,
+                        width: SizeConfig.screenWidth,
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(
+                          child: state is ShopsLoadingState
+                              ? Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      height: 25,
+                                      width: 25,
+                                      child: const CircularProgressIndicator(
+                                        color: tertiaryColor,
+                                        strokeWidth: 2.5,
                                       ),
-                                    );
-                              }
-                            },
-                            child: const Text("Submit"),
-                          ),
+                                    ),
+                                    SizedBox(width: 7),
+                                    PrimaryText(
+                                      text: 'Creating your shop....',
+                                      size: 14,
+                                      color: tertiaryColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ],
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    PrimaryText(
+                                      text: 'Create Your Shop',
+                                      size: 14,
+                                      color: whiteColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -344,6 +461,10 @@ class _CreateShopPageState extends State<CreateShopPage> {
       width: 40,
       decoration: BoxDecoration(
         color: Colors.black12,
+        border: Border.all(
+          width: 1,
+          color: Colors.grey.shade400,
+        ),
         borderRadius: BorderRadius.circular(40),
       ),
       child: Center(
@@ -361,84 +482,24 @@ class _CreateShopPageState extends State<CreateShopPage> {
         height: 35,
         width: 180,
         decoration: BoxDecoration(
-          color: Colors.grey.shade200.withOpacity(0.4),
+          color: Colors.black12,
           border: Border.all(
             width: 1,
-            color: Colors.grey.shade400.withOpacity(0.5),
+            color: Colors.grey.shade400,
           ),
           borderRadius: BorderRadius.circular(40),
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 5.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                "Create Shop",
-                style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12.5,
-                    ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget createShopContainer(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        context.read<ShopsBloc>().add(PickProfileImageEvent());
-      },
-      child: Container(
-        height: 180,
-        padding: const EdgeInsets.all(15),
-        width: MediaQuery.of(context).size.width,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(5),
-          color: Colors.white,
-          boxShadow: const [
-            BoxShadow(
-              blurRadius: 5,
-              spreadRadius: 0.5,
-              color: Color.fromARGB(255, 234, 233, 233),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "Create Shop",
+              style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12.5,
+                  ),
             ),
           ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                MingCute.camera_2_fill,
-                color: Colors.black54,
-                size: 50,
-              ),
-              SizedBox(height: 10),
-              SizedBox(
-                width: 273,
-                child: Column(
-                  children: [
-                    Text(
-                      overflow: TextOverflow.visible,
-                      textAlign: TextAlign.center,
-                      softWrap: true,
-                      "Upload a clear profile picture for your shop.",
-                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                            fontSize: 12,
-                            color: Colors.black54,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 15),
-            ],
-          ),
         ),
       ),
     );
@@ -455,20 +516,25 @@ class _CreateShopPageState extends State<CreateShopPage> {
       validator: validator,
       keyboardType: keyboardType,
       decoration: InputDecoration(
-        fillColor: const Color.fromARGB(255, 199, 208, 212),
+        fillColor: Colors.grey.shade200,
         labelText: label,
         labelStyle: TextStyle(
           fontSize: 15,
-          color: blackColor,
+          color: Colors.black54,
         ),
         filled: true,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: Colors.red,
-          ),
+          borderSide: BorderSide(color: Colors.grey.shade400),
         ),
-        focusedBorder: OutlineInputBorder(),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.grey.shade400),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.grey.shade400),
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
   }
@@ -487,15 +553,25 @@ class _CreateShopPageState extends State<CreateShopPage> {
       onChanged: onChanged,
       alignment: AlignmentDirectional.center,
       decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(
-          fontSize: 15,
-          color: blackColor,
-        ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        filled: true,
-        fillColor: const Color.fromARGB(255, 199, 208, 212),
-      ),
+          labelText: label,
+          labelStyle: TextStyle(
+            fontSize: 15,
+            color: Colors.black54,
+          ),
+          border: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey.shade400),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey.shade400),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey.shade400),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          filled: true,
+          fillColor: Colors.grey.shade200),
       validator: (val) => val == null ? "Please select $label" : null,
     );
   }
