@@ -9,6 +9,7 @@ import 'presentation/authentication/pages/signup_screen.dart';
 import 'presentation/home/pages/home.dart';
 import 'presentation/intro/pages/splash screen/splash.dart';
 import 'presentation/location/bloc/location_bloc.dart';
+import 'presentation/shops/pages/manage_shop.dart';
 
 class SalonAppOwner extends StatelessWidget {
   const SalonAppOwner({super.key});
@@ -34,6 +35,9 @@ class SalonAppOwner extends StatelessWidget {
               '/home': (context) => HomePage(),
               '/createshop': (context) => const CreateShopPage(),
               '/appointment': (context) => AppointmentsPage(),
+              '/manageshop': (context) => ManageShopPage(
+                    shopId: '',
+                  ),
 
               // '/shopinfo': (context) => const ShopInfo(),
               // '/shops': (context) => ShopsPage(),

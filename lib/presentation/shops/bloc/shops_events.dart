@@ -62,3 +62,8 @@ class SearchShopEvent extends ShopsEvent {
 
   SearchShopEvent({required this.query});
 }
+
+class FetchOwnerShopEvent extends ShopsEvent {
+  final String ownerId;
+  FetchOwnerShopEvent({required this.ownerId});
+}

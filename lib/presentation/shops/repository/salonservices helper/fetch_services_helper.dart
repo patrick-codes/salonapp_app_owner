@@ -117,21 +117,24 @@ class SalonServiceHelper {
     }
   }
 
-  Future<ShopModel?> fetchSinglesalonshops(String? id) async {
+  Future<ShopModel?> fetchOwnerSalonShop(String ownerId) async {
     try {
-      if (id == null) return null;
-      DocumentSnapshot<Map<String, dynamic>> documentSnapshot =
-          await _db.collection("salonshops").doc(id).get();
-      if (documentSnapshot.exists) {
-        final salonshops = ShopModel.fromSnapshot(documentSnapshot);
-        print("Fetched salonshop with id: $id successfully");
-        return salonshops;
+      final querySnapshot = await _db
+          .collection("salonshops")
+          .where("ownerID", isEqualTo: ownerId)
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        final salonShop = ShopModel.fromSnapshot(querySnapshot.docs.first);
+        print("Fetched salonshop for ownerId: $ownerId successfully");
+        return salonShop;
       } else {
-        print("No salonshop found with id: $id");
+        print("No salonshop found for ownerId: $ownerId");
         return null;
       }
     } catch (error) {
-      print("Error fetching salonshop by id: $error");
+      print("Error fetching salonshop by ownerId: $error");
       return null;
     }
   }

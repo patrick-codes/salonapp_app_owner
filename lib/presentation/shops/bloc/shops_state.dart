@@ -94,3 +94,15 @@ class ProfileImagesPickedState extends ShopsState {
 
   ProfileImagesPickedState(this.pickedFile); // positional
 }
+
+class OwnerShopLoading extends ShopsState {}
+
+class OwnerShopLoaded extends ShopsState {
+  final ShopModel shop;
+  OwnerShopLoaded(this.shop);
+}
+
+class OwnerShopFailure extends ShopsState {
+  final String error;
+  OwnerShopFailure(this.error);
+}

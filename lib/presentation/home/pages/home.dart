@@ -1,4 +1,5 @@
 import 'package:dotted_border/dotted_border.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:icons_plus/icons_plus.dart';
@@ -14,6 +15,9 @@ import '../../../helpers/widgets/grid_view.dart';
 import '../../../helpers/widgets/show_up_animation.dart';
 import '../../location/bloc/location_bloc.dart';
 import '../../notifications/components/local notification/local_notification_service.dart';
+import '../../shops/pages/manage_shop.dart';
+import '../../shops/repository/data rmodel/service_model.dart';
+import '../../shops/repository/salonservices helper/fetch_services_helper.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,6 +28,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
+  bool? hasData = true;
   List<Icon> icons = <Icon>[
     const Icon(
       MingCute.scissors_line,
@@ -70,6 +75,7 @@ class _HomePageState extends State<HomePage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
     final locationState = BlocProvider.of<LocationBloc>(context).state;
     if (locationState is LocationFetchedState) {}
     Future.delayed(Duration.zero, () {
@@ -101,7 +107,7 @@ class _HomePageState extends State<HomePage>
 
   @override
   bool get wantKeepAlive => true;
-
+  SalonServiceHelper fetchOwner = SalonServiceHelper();
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AppointmentBloc, AppointmentState>(
@@ -125,40 +131,46 @@ class _HomePageState extends State<HomePage>
             ),
           ),
           bottomNavigationBar: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: GestureDetector(
-              onTap: () {
-                Navigator.pushNamed(context, '/createshop');
-              },
-              child: Container(
-                height: 55,
-                width: SizeConfig.screenWidth,
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        MingCute.add_circle_fill,
-                        color: whiteColor,
-                        size: 25,
-                      ),
-                      SizedBox(width: 5),
-                      PrimaryText(
-                        text: 'Create Your Shop',
-                        size: 14,
-                        color: whiteColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ],
+              padding: const EdgeInsets.all(12.0),
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.pushNamed(context, '/createshop');
+                },
+                child: Container(
+                  height: 55,
+                  width: SizeConfig.screenWidth,
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          MingCute.add_circle_fill,
+                          color: whiteColor,
+                          size: 25,
+                        ),
+                        SizedBox(width: 5),
+                        fetchOwner.shopList.length! > 1
+                            ? PrimaryText(
+                                text: 'Get Started',
+                                size: 14,
+                                color: whiteColor,
+                                fontWeight: FontWeight.bold,
+                              )
+                            : PrimaryText(
+                                text: 'Add Shop',
+                                size: 14,
+                                color: whiteColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ),
+              )),
           body: SafeArea(
             child: SingleChildScrollView(
               physics: BouncingScrollPhysics(),
@@ -166,12 +178,10 @@ class _HomePageState extends State<HomePage>
                 padding: EdgeInsets.all(10),
                 child: Column(
                   children: [
-                    //createShopContainer(context),
                     dashboardWidget(context),
                   ],
                 ),
               ),
-              //dashboardWidget(context),
             ),
           ),
         );
@@ -179,7 +189,7 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  DottedBorder createShopContainer(BuildContext context) {
+  Widget createShopContainer(BuildContext context) {
     return DottedBorder(
       strokeWidth: 1,
       dashPattern: const [6, 4],
@@ -187,7 +197,7 @@ class _HomePageState extends State<HomePage>
       borderType: BorderType.RRect,
       radius: const Radius.circular(5),
       child: Container(
-        height: MediaQuery.of(context).size.height / 2,
+        height: 540,
         padding: const EdgeInsets.all(15),
         width: MediaQuery.of(context).size.width,
         decoration: BoxDecoration(
@@ -201,50 +211,98 @@ class _HomePageState extends State<HomePage>
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              height: 140,
-              width: 140,
-              "assets/svgs/feedbackImage.png",
-            ),
-            SizedBox(height: 20),
-            PrimaryText(
-              text: 'No shop available',
-              color: Colors.redAccent,
-              fontWeight: FontWeight.w600,
-              size: 18,
-            ),
-            SizedBox(height: 8),
-            SizedBox(
-              width: 273,
-              child: Column(
-                children: [
-                  Text(
-                    overflow: TextOverflow.visible,
-                    textAlign: TextAlign.center,
-                    softWrap: true,
-                    "No additional fee or taxes will be collected by the salon/barbershop owner when you arrive at the shop.",
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium!
-                        .copyWith(fontSize: 12),
-                  ),
-                ],
+        child: Center(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SvgPicture.asset(
+                height: 140,
+                width: 140,
+                "assets/svgs/undraw_barber_utly.svg",
               ),
-            ),
-            SizedBox(height: 20),
-            CustomButton(
-              icon: MingCute.add_circle_fill,
-              text: ' Create Shop',
-              onpressed: () {
-                Navigator.pushNamed(context, '/createshop');
-              },
-              color: blackColor,
-            ),
-          ],
+              SizedBox(height: 20),
+              PrimaryText(
+                text: '✨ Welcome to Hairvana – Salon Owner Portal ✨',
+                color: blackColor,
+                fontWeight: FontWeight.w600,
+                size: 18,
+              ),
+              SizedBox(height: 8),
+              SizedBox(
+                width: 273,
+                child: Column(
+                  children: [
+                    Text(
+                      overflow: TextOverflow.visible,
+                      textAlign: TextAlign.center,
+                      softWrap: true,
+                      "We’re excited to have you onboard! 🎉",
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium!
+                          .copyWith(fontSize: 12),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      overflow: TextOverflow.visible,
+                      textAlign: TextAlign.center,
+                      softWrap: true,
+                      "Create your salon profile to showcase your services, connect with new clients, and manage bookings with ease.",
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium!
+                          .copyWith(fontSize: 12),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      overflow: TextOverflow.visible,
+                      textAlign: TextAlign.center,
+                      softWrap: true,
+                      "Here’s what you’ll need to get started:",
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      overflow: TextOverflow.visible,
+                      textAlign: TextAlign.start,
+                      softWrap: true,
+                      "📸 Salon name, logo, and photos\n"
+                      "💇 Services you provide (e.g., braids, cuts)\n"
+                      "⏰ Business hours & location\n"
+                      "💳 Amount you charge for each service\n",
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                            height: 2,
+                            fontSize: 12,
+                          ),
+                    ),
+                    Text(
+                      overflow: TextOverflow.visible,
+                      textAlign: TextAlign.center,
+                      softWrap: true,
+                      "👉 Setting up takes less than 5 minutes, and you’ll be ready to grow your business!",
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 20),
+              // CustomButton(
+              //   icon: MingCute.add_circle_fill,
+              //   text: ' Create Shop',
+              //   onpressed: () {
+              //     Navigator.pushNamed(context, '/createshop');
+              //   },
+              //   color: blackColor,
+              // ),
+            ],
+          ),
         ),
       ),
     );
@@ -258,196 +316,263 @@ class _HomePageState extends State<HomePage>
         SizedBox(height: 15),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            PrimaryText(
-              text: "Active Shops",
-              color: Colors.black,
-              fontWeight: FontWeight.w600,
-              size: 14,
-            ),
-          ],
+          children: [],
         ),
         SizedBox(height: 8),
         ShowUpAnimation(
           delay: 300,
-          child: buildShopCard(
-            Colors.black,
-            context,
-            "Toronto Haircut",
-            "Weija-Scc, Accra",
-            "assets/svgs/${svgs[0]}.svg",
-            0,
-            0,
-            Colors.white,
-            Colors.white,
-            Colors.grey.shade200,
+          child: FutureBuilder<ShopModel?>(
+            future: fetchOwner
+                .fetchOwnerSalonShop(FirebaseAuth.instance.currentUser!.uid),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return SizedBox(
+                  height: 600,
+                  width: MediaQuery.of(context).size.width,
+                  child: const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              }
+              if (!snapshot.hasData) {
+                hasData == false;
+                return createShopContainer(context);
+              }
+
+              final shop = snapshot.data!;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  PrimaryText(
+                    text: "Active Shops",
+                    color: Colors.black,
+                    fontWeight: FontWeight.w600,
+                    size: 14,
+                  ),
+                  const SizedBox(height: 10),
+                  buildShopCard(
+                    Colors.black,
+                    context,
+                    shop.shopName ?? 'Shop Name',
+                    shop.location ?? 'Location',
+                    shop.profileImg,
+                    0,
+                    0,
+                    Colors.white,
+                    Colors.white,
+                    Colors.grey.shade200,
+                    shop.shopId ?? '',
+                    shop.dateJoined ?? '',
+                  ),
+                  const SizedBox(height: 30),
+                  PrimaryText(
+                    text: "Metrics",
+                    color: Colors.black,
+                    fontWeight: FontWeight.w600,
+                    size: 15,
+                  ),
+                  const SizedBox(height: 12),
+                  GridViewComponent(
+                    ownerId: shop.shopOwnerId!,
+                  ),
+                ],
+              );
+            },
           ),
         ),
-        SizedBox(height: 20),
-        PrimaryText(
-          text: "Dashboard",
-          color: Colors.black,
-          fontWeight: FontWeight.w600,
-          size: 15,
-        ),
-        SizedBox(height: 8),
-        GridViewComponent(),
       ],
     );
   }
 
-  Future<void> scrollBottomSheet(BuildContext context) {
-    return showModalBottomSheet(
-      context: context,
-      clipBehavior: Clip.hardEdge,
-      //enableDrag: true,
-      //useSafeArea: true,
-      showDragHandle: true,
-      isDismissible: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(25),
-        ),
-      ),
-      builder: (BuildContext context) {
-        return DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: 0.8,
-          minChildSize: 0.2,
-          maxChildSize: 0.9,
-          builder: (BuildContext context, ScrollController scrollController) {
-            return SizedBox(
-              height: 125,
-              width: MediaQuery.of(context).size.width,
-              child: ListView.builder(
-                itemCount: 4,
-                scrollDirection: Axis.vertical,
-                itemBuilder: (BuildContext context, int index) {
-                  return ShowUpAnimation(
-                    delay: 300,
-                    child: buildShopCard(
-                      Colors.white,
-                      context,
-                      "Toronto Haircut",
-                      "Weija-Scc, Accra",
-                      "assets/svgs/${svgs[0]}.svg",
-                      10,
-                      10,
-                      Colors.black,
-                      Colors.grey.shade500,
-                      Colors.grey.shade200,
-                    ),
-                  );
-                },
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
+  // Future<void> scrollBottomSheet(BuildContext context) {
+  //   return showModalBottomSheet(
+  //     context: context,
+  //     clipBehavior: Clip.hardEdge,
+  //     //enableDrag: true,
+  //     //useSafeArea: true,
+  //     showDragHandle: true,
+  //     isDismissible: true,
+  //     isScrollControlled: true,
+  //     backgroundColor: Colors.white,
+  //     shape: const RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.vertical(
+  //         top: Radius.circular(25),
+  //       ),
+  //     ),
+  //     builder: (BuildContext context) {
+  //       return DraggableScrollableSheet(
+  //         expand: false,
+  //         initialChildSize: 0.8,
+  //         minChildSize: 0.2,
+  //         maxChildSize: 0.9,
+  //         builder: (BuildContext context, ScrollController scrollController) {
+  //           return SizedBox(
+  //             height: 125,
+  //             width: MediaQuery.of(context).size.width,
+  //             child: ListView.builder(
+  //               itemCount: 4,
+  //               scrollDirection: Axis.vertical,
+  //               itemBuilder: (BuildContext context, int index) {
+  //                 return ShowUpAnimation(
+  //                   delay: 300,
+  //                   child: buildShopCard(
+  //                       Colors.white,
+  //                       context,
+  //                       "Toronto Haircut",
+  //                       "Weija-Scc, Accra",
+  //                       "assets/svgs/${svgs[0]}.svg",
+  //                       10,
+  //                       10,
+  //                       Colors.black,
+  //                       Colors.grey.shade500,
+  //                       Colors.grey.shade200,
+  //                       ''),
+  //                 );
+  //               },
+  //             ),
+  //           );
+  //         },
+  //       );
+  //     },
+  //   );
+  // }
 
   Widget buildShopCard(
     Color color,
     BuildContext context,
     String title,
     String location,
-    String imgs,
+    String? imgs,
     double horiMargin,
     double vertMargin,
     Color textColor,
     Color subtextColor,
     Color brColor,
+    String id,
+    String dateJoined,
   ) {
     return Column(
       children: [
-        Container(
-          height: 130,
-          width: MediaQuery.of(context).size.width,
-          // padding: const EdgeInsets.symmetric(horizontal: 10),
-          // margin: const EdgeInsets.symmetric(horizontal: 5),
-          margin: EdgeInsets.symmetric(
-            horizontal: horiMargin,
-            vertical: vertMargin,
-          ),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              width: 1.5,
-              color: brColor,
+        GestureDetector(
+          onTap: () {},
+          child: Container(
+            height: 130,
+            width: MediaQuery.of(context).size.width,
+            margin: EdgeInsets.symmetric(
+              horizontal: horiMargin,
+              vertical: vertMargin,
             ),
-            boxShadow: [
-              BoxShadow(
-                blurRadius: 2,
-                spreadRadius: 1,
-                color: secondaryColor2,
+            decoration: BoxDecoration(
+              color: Colors.transparent, // 👈 add this
+              image: DecorationImage(
+                fit: BoxFit.cover,
+                image: NetworkImage(imgs ?? ''),
               ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                width: 1.5,
+                color: brColor,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  blurRadius: 2,
+                  spreadRadius: 1,
+                  color: secondaryColor2,
+                ),
+              ],
+            ),
+            child: Stack(
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    PrimaryText(
-                      textOverflow: TextOverflow.ellipsis,
-                      text: title,
-                      color: textColor,
-                      fontWeight: FontWeight.w600,
-                      size: 20,
+                Positioned(
+                  child: Container(
+                    height: 130,
+                    width: 340,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.black,
+                          primaryColor.withOpacity(0.5),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    SizedBox(height: 2),
-                    PrimaryText(
-                      text: location,
-                      color: subtextColor,
-                      fontWeight: FontWeight.w500,
-                      size: 11,
-                    ),
-                    SizedBox(height: 20),
-                    GestureDetector(
-                      onTap: () {
-                        // Navigator.pushNamed(context, '/appointment');
-                      },
-                      child: Container(
-                        height: 30,
-                        width: 105,
-                        decoration: BoxDecoration(
-                          border: Border.all(
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          PrimaryText(
+                            text: title,
                             color: whiteColor,
+                            fontWeight: FontWeight.w600,
+                            size: 20,
                           ),
-                          color: blackColor,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Center(
-                          child: Text(
-                            "Manage Shop",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              fontSize: 11,
+                          SizedBox(height: 2),
+                          Row(
+                            children: [
+                              PrimaryText(
+                                text: 'Created on: ',
+                                color: whiteColor,
+                                fontWeight: FontWeight.w500,
+                                size: 9.5,
+                              ),
+                              PrimaryText(
+                                text: dateJoined,
+                                color: whiteColor,
+                                fontWeight: FontWeight.w500,
+                                size: 9.5,
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 25),
+                          Expanded(
+                            flex: 1,
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.pushNamed(context, '/appointment');
+                              },
+                              child: Container(
+                                height: 30,
+                                width: 150,
+                                decoration: BoxDecoration(
+                                  boxShadow: [
+                                    BoxShadow(
+                                      blurRadius: 2,
+                                      spreadRadius: 1,
+                                      color: secondaryColor2,
+                                    ),
+                                  ],
+                                  // border: Border.all(
+                                  //   width: 2,
+                                  //   color: primaryColor,
+                                  // ),
+                                  color: whiteColor,
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    'View Appointments',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: blackColor,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-                Column(
-                  children: [
-                    SvgPicture.asset(
-                      imgs,
-                      height: 90,
-                      width: 108,
-                      fit: BoxFit.cover,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),

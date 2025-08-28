@@ -27,7 +27,7 @@ class CustomAppBar extends StatelessWidget {
           onTap: () {
             Navigator.pushNamed(context, '/appointment');
           },
-          child: count! > 0
+          child: count != null && count! > 0
               ? Badge(
                   label: Text("$count"),
                   smallSize: 5,

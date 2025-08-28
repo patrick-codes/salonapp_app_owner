@@ -100,6 +100,7 @@ class _CreateShopPageState extends State<CreateShopPage> {
         if (state is ShopCreatedSuccesState) {
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text(state.message)));
+          Navigator.pushNamed(context, '/home');
         } else if (state is ShopCreateFailureState) {
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text(state.error)));

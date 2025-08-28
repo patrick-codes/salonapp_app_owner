@@ -26,12 +26,16 @@ class ShopsBloc extends Bloc<ShopsEvent, ShopsState> {
   int num = 0;
   int total = 0;
 
-  ShopsBloc(this.locationBloc) : super(ShopInitial()) {
+  final SalonServiceHelper shopHelper = SalonServiceHelper();
+  ShopsBloc(
+    this.locationBloc,
+  ) : super(ShopInitial()) {
     on<ViewShopsEvent>(fetchShops);
     on<SearchShopEvent>(searchShops);
     on<PickProfileImageEvent>(onPickImage);
     on<PickShopImageEvent>(onPickWorkImage);
     on<CreateShopEvent>(createShop);
+    on<FetchOwnerShopEvent>(_onFetchOwnerShopEvent);
   }
   void onSearchChanged(String query) {
     serviceman = serviceman2!
@@ -184,5 +188,20 @@ class ShopsBloc extends Bloc<ShopsEvent, ShopsState> {
       emit(ShopsFetchFailureState(errorMessage: error.toString()));
     }
     return serviceman;
+  }
+
+  Future<void> _onFetchOwnerShopEvent(
+      FetchOwnerShopEvent event, Emitter<ShopsState> emit) async {
+    emit(OwnerShopLoading());
+    try {
+      final shop = await shopHelper.fetchOwnerSalonShop(event.ownerId);
+      if (shop != null) {
+        emit(OwnerShopLoaded(shop));
+      } else {
+        emit(OwnerShopFailure("No salon shop found for this owner."));
+      }
+    } catch (e) {
+      emit(OwnerShopFailure("Failed to fetch salon shop: $e"));
+    }
   }
 }
